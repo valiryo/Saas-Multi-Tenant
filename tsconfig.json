@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "disableSourceOfProjectReferenceRedirect": false
+  },
+  "references": [
+    { "path": "apps/api" }
+  ],
+  "files": [],
+  "include": []
+}
