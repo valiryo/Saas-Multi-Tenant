@@ -56,7 +56,7 @@ describe('PrismaUsuarioMapper', () => {
       id: Id.criar(usuarioId).resultado,
       nome: NomeDePessoa.criar(nome).resultado,
       email: Email.criar(email).resultado,
-      senhaHash: SenhaHash.criar(senhaHash),
+      senhaHash: SenhaHash.criar(senhaHash).resultado,
       organizacaoIds: [
         Id.criar(organizacaoId1).resultado,
         Id.criar(organizacaoId2).resultado,

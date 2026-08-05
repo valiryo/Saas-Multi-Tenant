@@ -1,16 +1,20 @@
+import { Result } from "@shared/domain/value-objects/result";
+import { SenhaForteInvalidaError } from "../errors/senhaForte-invalida.error";
+
 export class SenhaForte {
     private readonly _valor: string;    
     private constructor(valor: string) {
         this._valor = valor;
+    }
+
+    static criar(valor: string): Result<SenhaForte> {
         const erros = SenhaForte.validar(valor);
 
         if (erros.length > 0) {
-            throw new Error(`Senha inválida: ${erros.join(', ')}`);
+            return Result.falhar(new SenhaForteInvalidaError(erros.join(', ')));
         }
-    }
 
-    static criar(valor: string): SenhaForte {
-        return new SenhaForte(valor);
+        return Result.passar(new SenhaForte(valor));
     }
 
     static validar(valor: string): string[] {

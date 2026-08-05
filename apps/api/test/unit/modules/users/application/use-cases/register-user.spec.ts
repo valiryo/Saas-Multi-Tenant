@@ -5,7 +5,7 @@ import { RegistrarUsuarioCasoDeUso } from '@users/application/use-cases/register
 import { Email } from '@shared/domain/value-objects/email';
 import { SenhaForte } from '@users/domain/value-objects/senhaForte';
 import { NomeDePessoa } from '@shared/domain/value-objects/nome-de-pessoa';
-import { UsuarioJaExistenteError } from '@users/domain/errors/usuario-ja-existente-error';
+import { UsuarioJaExistenteError } from '@users/domain/errors/usuario-ja-existente.error';
 
 describe('RegistrarUsuarioCasoDeUso', () => {
     let sut: RegistrarUsuarioCasoDeUso; // System Under Test
@@ -31,7 +31,7 @@ describe('RegistrarUsuarioCasoDeUso', () => {
         const input = {
             nome: NomeDePessoa.criar('Test User').resultado,
             email: Email.criar('test@example.com').resultado,
-            senha: SenhaForte.criar('Password123!'),
+            senha: SenhaForte.criar('Password123!').resultado,
         };
 
         // Lógica 1: Mockando buscarPorEmail para retornar null (usuário não existe)
@@ -49,7 +49,7 @@ describe('RegistrarUsuarioCasoDeUso', () => {
         const input = {
             nome: NomeDePessoa.criar('Test User 2').resultado,
             email: Email.criar('existing@example.com').resultado,
-            senha: SenhaForte.criar('Password123!'),
+            senha: SenhaForte.criar('Password123!').resultado,
         };
 
         // Lógica 1: Mockando para retornar um usuário (email já em uso)

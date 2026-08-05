@@ -8,7 +8,7 @@ import { Result } from '@shared/domain/value-objects/result';
 import { Usuario } from '@users/domain/entities/usuario.entidade';
 import { SenhaHash } from '@users/domain/value-objects/senhaHash';
 
-const usuarioComVinculos = {
+export const usuarioComVinculos = {
   include: {
     vinculos: {
       select: {
@@ -41,6 +41,10 @@ export class PrismaUsuarioMapper {
       dadosPrisma.senhaHash,
     );
 
+    if(senhaHash.isFalha) {
+      return Result.falhar(senhaHash.falha);
+    }
+
     const nome = NomeDePessoa.criar(dadosPrisma.nome);
 
     if (nome.isFalha) {
@@ -64,7 +68,7 @@ export class PrismaUsuarioMapper {
     return Usuario.criar({
       id: id.resultado,
       email: email.resultado,
-      senhaHash: senhaHash,
+      senhaHash: senhaHash.resultado,
       nome: nome.resultado,
       organizacaoIds,
     });

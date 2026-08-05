@@ -3,7 +3,7 @@ import { RegistrarUsuarioComando } from "../dtos/registrar-usuario-comando";
 import { Result } from "@shared/domain/value-objects/result";
 import { IRepositorioUsuario } from "src/modules/usuarios/domain/repositories/usuario.repositorio";
 import { ServicoCriptografia } from "@shared/domain/repositories/servico-criptografia";
-import { UsuarioJaExistenteError } from "@users/domain/errors/usuario-ja-existente-error";
+import { UsuarioJaExistenteError } from "@users/domain/errors/usuario-ja-existente.error";
 
 export class RegistrarUsuarioCasoDeUso {
     constructor(
