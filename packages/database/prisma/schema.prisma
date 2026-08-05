@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -12,29 +7,33 @@ datasource db {
   provider = "postgresql"
 }
 
-model User {
-  id        String       @id @default(uuid())
-  email     String       @unique
-  password  String
-  memberships Membership[] // Relacionamento para múltiplas empresas
-  createdAt DateTime     @default(now())
-}
-
-model Tenant {
-  id        String       @id @default(uuid())
-  name      String
-  slug      String       @unique
-  memberships Membership[]
-  createdAt DateTime     @default(now())
-}
-
-model Membership {
+model Usuario {
   id        String   @id @default(uuid())
-  userId    String
-  tenantId  String
-  role      String   // Ex: 'ADMIN', 'MEMBER'
-  user      User     @relation(fields: [userId], references: [id])
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  nome      String
+  email     String   @unique
+  senhaHash String
+  criadoEm  DateTime @default(now())
 
-  @@unique([userId, tenantId]) // Garante que o usuário não entre duas vezes na mesma org
+  vinculos VinculoOrganizacao[]
+}
+
+model Organizacao {
+  id       String   @id @default(uuid())
+  nome     String
+  slug     String   @unique
+  criadoEm DateTime @default(now())
+
+  vinculos VinculoOrganizacao[]
+}
+
+model VinculoOrganizacao {
+  id            String @id @default(uuid())
+  usuarioId     String
+  organizacaoId String
+  papel         String
+
+  usuario     Usuario     @relation(fields: [usuarioId], references: [id])
+  organizacao Organizacao @relation(fields: [organizacaoId], references: [id])
+
+  @@unique([usuarioId, organizacaoId])
 }
