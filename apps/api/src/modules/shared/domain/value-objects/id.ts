@@ -11,21 +11,21 @@ export class Id {
     static criar(valor?: string): Result<Id> {
         if (valor) {
             const resultId = this.validar(valor);
-            if (resultId.isFailure) {
-                return Result.fail(resultId.error);
+            if (resultId.isFalha) {
+                return Result.falhar(resultId.falha);
             }
-            return Result.ok(new Id(valor));
+            return Result.passar(new Id(valor));
         }
-        return Result.ok(new Id());
+        return Result.passar(new Id());
     }
 
     private static validar(value: string): Result<true> {
         const uuidV4Regex =
             /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-        if(!uuidV4Regex.test(value)) return Result.fail(new IdMalFormatadoError(value));
+        if(!uuidV4Regex.test(value)) return Result.falhar(new IdMalFormatadoError(value));
 
-        return Result.ok(true);
+        return Result.passar(true);
     }
 
     get valor(): string {

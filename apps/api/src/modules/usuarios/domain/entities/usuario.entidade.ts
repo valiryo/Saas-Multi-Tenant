@@ -15,21 +15,42 @@ export interface UsuarioProps {
 }
 
 export class Usuario {
-    private readonly id: Id;
-    private readonly email: Email;
-    private readonly senhaHash: SenhaHash;
-    private readonly nome: NomeDePessoa;
-    private readonly organizacaoIds: Id[];
+    private readonly _id: Id;
+    private readonly _email: Email;
+    private readonly _senhaHash: SenhaHash;
+    private readonly _nome: NomeDePessoa;
+    private readonly _organizacaoIds: Id[];
 
     private constructor(props: UsuarioProps){
-        this.id = props.id ?? Id.criar().value;
-        this.email = props.email;
-        this.senhaHash = props.senhaHash;
-        this.nome = props.nome;
-        this.organizacaoIds = props.organizacaoIds;
+        this._id = props.id ?? Id.criar().resultado;
+        this._email = props.email;
+        this._senhaHash = props.senhaHash;
+        this._nome = props.nome;
+        this._organizacaoIds = props.organizacaoIds;
     }
 
     static criar(props: UsuarioProps): Result<Usuario> {
-        return Result.ok(new Usuario(props));
+        return Result.passar(new Usuario(props));
     }
+
+    get email(): Email {
+        return this._email;
+    }
+
+    get id(): Id {
+        return this._id;
+    }
+
+    get nome(): NomeDePessoa {
+        return this._nome;
+    }
+
+    get senhaHash(): SenhaHash {
+        return this._senhaHash;
+    }
+
+    get organizacaoIds(): readonly Id[] {
+        return [...this._organizacaoIds];
+    }
+
 }

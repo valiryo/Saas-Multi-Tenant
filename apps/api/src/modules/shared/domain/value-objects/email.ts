@@ -9,19 +9,19 @@ export class Email {
 
     static criar(valor: string): Result<Email> {
         const emailResult = Email.validarEmail(valor);
-        if (emailResult.isFailure) {
-            return Result.fail(emailResult.error);
+        if (emailResult.isFalha) {
+            return Result.falhar(emailResult.falha);
         }
-        return Result.ok(new Email(valor));
+        return Result.passar(new Email(valor));
     }
 
     private static validarEmail(email: string): Result<true> {
         const regexEmail = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
         const emailValido = regexEmail.test(email);
         if(!emailValido){
-            return Result.fail(new EmailInvalidoError(email));
+            return Result.falhar(new EmailInvalidoError(email));
         }
-        return Result.ok(true);
+        return Result.passar(true);
     }
 
     get valor(): string {

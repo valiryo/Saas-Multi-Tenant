@@ -1,37 +1,37 @@
-import { DomainError } from "../errors/erro-de-dominio";
+import { ErroDeDominio } from "../errors/erro-de-dominio";
 
-export class Result<T, E extends DomainError = DomainError> {
-    public readonly isSuccess: boolean;
-    public readonly isFailure: boolean;
-    private readonly _error?: E;
-    private readonly _value?: T;
+export class Result<T, E extends ErroDeDominio = ErroDeDominio> {
+    public readonly isSucesso: boolean;
+    public readonly isFalha: boolean;
+    private readonly _erro?: E;
+    private readonly _valor?: T;
 
-    private constructor(isSuccess: boolean, error?: E, value?: T) {
-        this.isSuccess = isSuccess;
-        this.isFailure = !isSuccess;
-        this._error = error;
-        this._value = value;
+    private constructor(isSucesso: boolean, erro?: E, valor?: T) {
+        this.isSucesso = isSucesso;
+        this.isFalha = !isSucesso;
+        this._erro = erro;
+        this._valor = valor;
     }
 
-    public static ok<U>(value: U): Result<U> {
+    public static passar<U>(value: U): Result<U> {
         return new Result<U, any>(true, undefined, value);
     }
 
-    public static fail<F extends DomainError>(error: F): Result<any, F> {
+    public static falhar<F extends ErroDeDominio>(error: F): Result<any, F> {
         return new Result<any, F>(false, error);
     }
 
-    get error(): E {
-        if (this.isSuccess) {
+    get falha(): E {
+        if (this.isSucesso) {
             throw new Error("Não é possível acessar o erro de um resultado bem-sucedido.");
         }
-        return this._error!;
+        return this._erro!;
     }
 
-    get value(): T {
-        if (this.isFailure) {
+    get resultado(): T {
+        if (this.isFalha) {
             throw new Error("Não é possível acessar o valor de um resultado falho.");
         }
-        return this._value!;
+        return this._valor!;
     }
 }

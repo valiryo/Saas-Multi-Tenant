@@ -6,7 +6,7 @@ import { SenhaForte } from "src/modules/usuarios/domain/value-objects/senhaForte
 export class RegistrarUsuarioComando{
     constructor(
         public readonly email: Email,
-        public readonly password: SenhaForte,
-        public readonly name: NomeDePessoa,
+        public readonly senha: SenhaForte,
+        public readonly nome: NomeDePessoa,
     ){}
 }

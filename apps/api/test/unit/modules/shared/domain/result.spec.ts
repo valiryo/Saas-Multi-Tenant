@@ -1,28 +1,28 @@
 import { describe, it, expect } from 'vitest';
 import { Result } from '../../../../../src/modules/shared/domain/value-objects/result';
-import { DomainError } from '../../../../../src/modules/shared/domain/errors/erro-de-dominio';
+import { ErroDeDominio } from '../../../../../src/modules/shared/domain/errors/erro-de-dominio';
 
 // Mock de um erro para teste
-class TestError extends DomainError {
+class TestError extends ErroDeDominio {
     constructor() { super('Erro de teste'); }
 }
 
 describe('Result Value Object', () => {
     it('deve criar um resultado de sucesso', () => {
-        const result = Result.ok('sucesso');
-        expect(result.isSuccess).toBe(true);
-        expect(result.value).toBe('sucesso');
+        const result = Result.passar('sucesso');
+        expect(result.isSucesso).toBe(true);
+        expect(result.resultado).toBe('sucesso');
     });
 
     it('deve criar um resultado de falha', () => {
         const error = new TestError();
-        const result = Result.fail(error);
-        expect(result.isFailure).toBe(true);
-        expect(result.error).toBe(error);
+        const result = Result.falhar(error);
+        expect(result.isFalha).toBe(true);
+        expect(result.falha).toBe(error);
     });
 
     it('deve lançar erro ao acessar value em uma falha', () => {
-        const result = Result.fail(new TestError());
-        expect(() => result.value).toThrow("Não é possível acessar o valor de um resultado falho.");
+        const result = Result.falhar(new TestError());
+        expect(() => result.resultado).toThrow("Não é possível acessar o valor de um resultado falho.");
     });
 });

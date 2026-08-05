@@ -25,12 +25,12 @@ export class NomeDePessoa {
 
         // Executamos a validação
         const nomeResult = this.validar(nomeFormatado);
-        if (nomeResult.isFailure) {
-            return Result.fail(nomeResult.error);
+        if (nomeResult.isFalha) {
+            return Result.falhar(nomeResult.falha);
         }
 
         // Se passar, retornamos o sucesso com o objeto instanciado
-        return Result.ok(new NomeDePessoa(nomeFormatado));
+        return Result.passar(new NomeDePessoa(nomeFormatado));
     }
 
     private static validar(nome: string): Result<void> {
@@ -40,9 +40,9 @@ export class NomeDePessoa {
         const isNomeIncompleto = nomeLimpo.split(" ").length < 2;
 
         if (isNomePequeno || isNomeIncompleto) {
-            return Result.fail(new NomeDePessoaInvalidoError(nomeLimpo));
+            return Result.falhar(new NomeDePessoaInvalidoError(nomeLimpo));
         }
-        return Result.ok(undefined);
+        return Result.passar(undefined);
     }
 
     private static formatarNome(nome: string): string {
