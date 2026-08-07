@@ -2,15 +2,15 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "extends": "../../packages/typescript-config/base.json",
   "compilerOptions": {
-    "composite": true,
-    "rootDir": "src",
-    "outDir": "dist",
+    "composite": true, //posso ser referenciado por outros projetos (por Project References)? precisa de compilação incremental, pois ela guarda o estado da compilação dos outros projetos e depois fica fácil resolver o grafo de dependências
+    "rootDir": "src", //onde estao os codigos fontes que serão compilados
+    "outDir": "dist", //onde os codigos compilados serão colocados
     "baseUrl": ".", 
-    "paths": {
+    "paths": { //aliases do typescript. não traduz automaticamente os alias em caminhos nos códigos javascript compilados, mas o tsconfig-paths faz isso.
       "@shared/*": ["src/modules/shared/*"], 
       "@users/*": ["src/modules/usuarios/*"] 
     }
   },
-  "include": ["src/**/*", "test/**/*"], 
+  "include": ["src/**/*"],  //escolhe quais arquivos dentr do rootDir serão compilados
   "exclude": ["node_modules", "dist"]
 }
