@@ -1,25 +1,15 @@
 import type { Prisma } from "database";
 
-import { Email } from '@shared/domain/value-objects/email';
-import { Id } from '@shared/domain/value-objects/id';
-import { NomeDePessoa } from '@shared/domain/value-objects/nome-de-pessoa';
-import { Result } from '@shared/domain/value-objects/result';
+import { Email } from "@shared/domain/value-objects/email";
+import { Id } from "@shared/domain/value-objects/id";
+import { NomeDePessoa } from "@shared/domain/value-objects/nome-de-pessoa";
+import { Result } from "@shared/domain/value-objects/result";
 
-import { Usuario } from '@users/domain/entities/usuario.entidade';
-import { SenhaHash } from '@users/domain/value-objects/senhaHash';
-
-export const usuarioComVinculos = {
-  include: {
-    vinculos: {
-      select: {
-        organizacaoId: true,
-      },
-    },
-  },
-} satisfies Prisma.UsuarioDefaultArgs;
+import { Usuario } from "@users/domain/entities/usuario.entidade";
+import { SenhaHash } from "@users/domain/value-objects/senhaHash";
 
 export type PrismaUsuarioSchema =
-  Prisma.UsuarioGetPayload<typeof usuarioComVinculos>;
+  Prisma.UsuarioGetPayload<{}>;
 
 export class PrismaUsuarioMapper {
   public static paraDominio(
@@ -41,28 +31,16 @@ export class PrismaUsuarioMapper {
       dadosPrisma.senhaHash,
     );
 
-    if(senhaHash.isFalha) {
+    if (senhaHash.isFalha) {
       return Result.falhar(senhaHash.falha);
     }
 
-    const nome = NomeDePessoa.criar(dadosPrisma.nome);
+    const nome = NomeDePessoa.criar(
+      dadosPrisma.nome,
+    );
 
     if (nome.isFalha) {
       return Result.falhar(nome.falha);
-    }
-
-    const organizacaoIds: Id[] = [];
-
-    for (const vinculo of dadosPrisma.vinculos) {
-      const organizacaoId = Id.criar(
-        vinculo.organizacaoId,
-      );
-
-      if (organizacaoId.isFalha) {
-        return Result.falhar(organizacaoId.falha);
-      }
-
-      organizacaoIds.push(organizacaoId.resultado);
     }
 
     return Usuario.criar({
@@ -70,7 +48,6 @@ export class PrismaUsuarioMapper {
       email: email.resultado,
       senhaHash: senhaHash.resultado,
       nome: nome.resultado,
-      organizacaoIds,
     });
   }
 

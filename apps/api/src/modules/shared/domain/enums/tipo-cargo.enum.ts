@@ -1,0 +1,4 @@
+export enum TipoCargo {
+    ADMINISTRADOR = 'ADMINISTRADOR',
+    FUNCIONARIO = 'FUNCIONARIO',
+}

@@ -57,10 +57,6 @@ describe('PrismaUsuarioMapper', () => {
       nome: NomeDePessoa.criar(nome).resultado,
       email: Email.criar(email).resultado,
       senhaHash: SenhaHash.criar(senhaHash).resultado,
-      organizacaoIds: [
-        Id.criar(organizacaoId1).resultado,
-        Id.criar(organizacaoId2).resultado,
-      ],
     });
 
     expect(resultado.isSucesso).toBe(true);
@@ -85,29 +81,6 @@ describe('PrismaUsuarioMapper', () => {
       expect(usuario.nome.nomeCompleto).toBe(nome);
       expect(usuario.email.valor).toBe(email);
       expect(usuario.senhaHash.valor).toBe(senhaHash);
-
-      expect(
-        usuario.organizacaoIds.map(
-          (organizacaoId) => organizacaoId.valor,
-        ),
-      ).toEqual([
-        organizacaoId1,
-        organizacaoId2,
-      ]);
-    });
-
-    it('deve criar o usuário sem organizações quando não houver vínculos', () => {
-      const dadosPrisma = criarDadosPrisma({
-        vinculos: [],
-      });
-
-      const resultado =
-        PrismaUsuarioMapper.paraDominio(dadosPrisma);
-
-      expect(resultado.isSucesso).toBe(true);
-      expect(
-        resultado.resultado.organizacaoIds,
-      ).toEqual([]);
     });
 
     it('deve propagar uma falha ao receber dados inválidos', () => {

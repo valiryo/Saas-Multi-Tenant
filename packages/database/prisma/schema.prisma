@@ -7,6 +7,11 @@ datasource db {
   provider = "postgresql"
 }
 
+enum TipoCargo {
+  ADMINISTRADOR
+  FUNCIONARIO
+}
+
 model Usuario {
   id        String   @id @default(uuid())
   nome      String
@@ -14,7 +19,7 @@ model Usuario {
   senhaHash String
   criadoEm  DateTime @default(now())
 
-  vinculos VinculoOrganizacao[]
+  vinculosEmpregaticios VinculoEmpregaticio[]
 }
 
 model Organizacao {
@@ -23,17 +28,37 @@ model Organizacao {
   slug     String   @unique
   criadoEm DateTime @default(now())
 
-  vinculos VinculoOrganizacao[]
+  vinculosEmpregaticios VinculoEmpregaticio[]
 }
 
-model VinculoOrganizacao {
-  id            String @id @default(uuid())
+model VinculoEmpregaticio {
+  id            String    @id @default(uuid())
   usuarioId     String
   organizacaoId String
-  papel         String
+  cargo         TipoCargo
+  ativo         Boolean   @default(true)
+  criadoEm      DateTime  @default(now())
+  atualizadoEm  DateTime  @updatedAt
 
-  usuario     Usuario     @relation(fields: [usuarioId], references: [id])
-  organizacao Organizacao @relation(fields: [organizacaoId], references: [id])
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+
+  organizacao                   Organizacao                    @relation(fields: [organizacaoId], references: [id], onDelete: Restrict)
+  
+  historicoVinculoEmpregaticios HistoricoVinculoEmpregaticio[]
 
   @@unique([usuarioId, organizacaoId])
+  @@index([organizacaoId])
+}
+
+model HistoricoVinculoEmpregaticio {
+  id         String    @id @default(uuid())
+  vinculoId  String
+  cargo      TipoCargo
+  ativo      Boolean
+  alteradoEm DateTime  @default(now())
+
+  vinculo VinculoEmpregaticio @relation(fields: [vinculoId], references: [id], onDelete: Restrict)
+
+  @@index([vinculoId])
+  @@index([vinculoId, alteradoEm])
 }
