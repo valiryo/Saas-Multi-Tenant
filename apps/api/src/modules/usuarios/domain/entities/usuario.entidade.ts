@@ -1,4 +1,3 @@
-import { ServicoCriptografia } from "../../../shared/domain/services/servico-criptografia";
 import { SenhaHash } from "../value-objects/senhaHash";
 import { Id } from "../../../shared/domain/value-objects/id";
 import { Email } from "../../../shared/domain/value-objects/email";

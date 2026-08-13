@@ -1,5 +1,5 @@
 import { SenhaForte } from "./senhaForte";
-import { ServicoCriptografia } from "../../../shared/domain/repositories/servico-criptografia";
+import { ServicoCriptografia } from "../../../shared/domain/services/servico-criptografia";
 import { Result } from "@shared/domain/value-objects/result";
 import { SenhaHashInvalidaError } from "../errors/senhaHash-invalida.error";
 

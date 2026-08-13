@@ -1,0 +1,1 @@
+export const REPOSITORIO_USUARIO_TOKEN = "IRepositorioUsuario";

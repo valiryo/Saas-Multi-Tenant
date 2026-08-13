@@ -7,8 +7,7 @@ import { IRepositorioUsuario } from "@users/domain/repositories/usuario.reposito
 
 import {
   PrismaUsuarioMapper,
-  PrismaUsuarioSchema,
-  usuarioComVinculos,
+  type PrismaUsuarioSchema,
 } from "../mappers/prisma-usuario.mapper";
 
 export class PrismaUsuarioAdapter
@@ -26,21 +25,23 @@ export class PrismaUsuarioAdapter
         where: {
           email: email.valor,
         },
-        ...usuarioComVinculos,
       });
 
     if (!dadosPrisma) {
       return null;
     }
 
-    return this.converterParaDominio(dadosPrisma);
+    return this.converterParaDominio(
+      dadosPrisma,
+    );
   }
 
   public async salvar(
     usuario: Usuario,
   ): Promise<Usuario> {
     const dadosPersistencia =
-      PrismaUsuarioMapper.paraPersistencia(usuario);
+      PrismaUsuarioMapper
+        .paraPersistencia(usuario);
 
     const dadosPrisma =
       await this.prisma.usuario.upsert({
@@ -52,33 +53,32 @@ export class PrismaUsuarioAdapter
           id: dadosPersistencia.id,
           nome: dadosPersistencia.nome,
           email: dadosPersistencia.email,
-          senhaHash: dadosPersistencia.senhaHash,
+          senhaHash:
+            dadosPersistencia.senhaHash,
         },
 
         update: {
           nome: dadosPersistencia.nome,
           email: dadosPersistencia.email,
-          senhaHash: dadosPersistencia.senhaHash,
+          senhaHash:
+            dadosPersistencia.senhaHash,
         },
-
-        ...usuarioComVinculos,
       });
 
-    return this.converterParaDominio(dadosPrisma);
+    return this.converterParaDominio(
+      dadosPrisma,
+    );
   }
 
   private converterParaDominio(
     dadosPrisma: PrismaUsuarioSchema,
   ): Usuario {
     const resultado =
-      PrismaUsuarioMapper.paraDominio(dadosPrisma);
+      PrismaUsuarioMapper
+        .paraDominio(dadosPrisma);
 
     if (resultado.isFalha) {
-      throw new Error(
-        `Erro ao converter usuário do Prisma para o domínio: ${String(
-          resultado.falha,
-        )}`,
-      );
+      throw resultado.falha;
     }
 
     return resultado.resultado;
