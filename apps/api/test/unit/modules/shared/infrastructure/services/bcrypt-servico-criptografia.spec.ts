@@ -10,14 +10,14 @@ describe('BcryptServicoCriptografia', () => {
 
     it('deve gerar um hash seguro e diferente da senha em texto limpo', async () => {
         const senhaLimpa = 'SenhaSuperSegura123!';
-        
+
         const hash = await servicoCriptografia.criptografar(senhaLimpa);
 
         // Garante que o hash foi gerado
         expect(hash).toBeDefined();
         // O hash nunca deve ser igual à senha original
         expect(hash).not.toBe(senhaLimpa);
-        expect(hash.length).toBeGreaterThan(20); 
+        expect(hash.length).toBeGreaterThan(20);
     });
 
     it('deve retornar true ao comparar a senha correta com o hash correspondente', async () => {

@@ -1,17 +1,6 @@
 import type { Prisma } from "database";
 
-import { VinculoEmpregaticio } from
-  "@shared/domain/entities/vinculo-empregaticio.entidade";
-
-import { TipoCargo } from
-  "@shared/domain/enums/tipo-cargo.enum";
-
-import { Id } from
-  "@shared/domain/value-objects/id";
-
-import { Result } from
-  "@shared/domain/value-objects/result";
-
+import { VinculoEmpregaticio, TipoCargo, Id, Result } from "@saas/shared";
 
 export type PrismaVinculoEmpregaticioSchema =
   Prisma.VinculoEmpregaticioGetPayload<{}>;

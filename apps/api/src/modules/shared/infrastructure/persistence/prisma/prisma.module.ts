@@ -1,4 +1,4 @@
-import { PrismaService } from "@shared/infrastructure/services/prisma.service";
+import { PrismaService } from "src/modules/database/services/prisma.service";
 import { Module } from "@nestjs/common";
 
 @Module({

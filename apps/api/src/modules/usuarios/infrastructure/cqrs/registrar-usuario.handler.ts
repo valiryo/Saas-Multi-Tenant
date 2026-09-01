@@ -1,14 +1,23 @@
 import { CommandHandler, ICommandHandler } from "@nestjs/cqrs";
-import { RegistrarUsuarioComando } from "@users/application/dtos/registrar-usuario.comando";
-import { RegistrarUsuarioCasoDeUso } from "@users/application/use-cases/register-user";
+import { RegistrarUsuarioCasoDeUso } from "@saas/usuarios";
+import { RegistrarUsuarioCommand, RegistrarUsuarioCommandResult } from "./registrar-usuario.command";
+import { Result } from "@saas/shared";
 
-@CommandHandler(RegistrarUsuarioComando)
-export class RegistrarUsuarioHandler implements ICommandHandler<RegistrarUsuarioComando> {
+@CommandHandler(RegistrarUsuarioCommand)
+export class RegistrarUsuarioHandler implements ICommandHandler<RegistrarUsuarioCommand> {
     constructor(
         private readonly registrarUsuarioCasoDeUso: RegistrarUsuarioCasoDeUso
     ){}
 
-    async execute(cmd: RegistrarUsuarioComando): Promise<any> {
-        return this.registrarUsuarioCasoDeUso.executar(cmd);
+    async execute(cmd: RegistrarUsuarioCommand): Promise<Result<RegistrarUsuarioCommandResult>> {
+        const result = await this.registrarUsuarioCasoDeUso.executar(cmd)
+
+        if(result.isFalha) return Result.falhar(result.falha);
+        const usuario = result.resultado;
+
+        return Result.passar({
+            id: usuario.id.valor,
+            email: usuario.email.valor
+        })
     }
 }

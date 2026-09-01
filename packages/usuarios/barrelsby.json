@@ -1,0 +1,13 @@
+{
+  "directory": [
+    "./src/domain",
+    "./src/application"
+  ],
+  "location": "top",
+  "structure": "flat",
+  "local": false,
+  "delete": true,
+  "exclude": [
+    ".*\\.spec\\.ts$"
+  ]
+}

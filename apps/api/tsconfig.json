@@ -11,6 +11,6 @@
       "@users/*": ["src/modules/usuarios/*"] 
     }
   },
-  "include": ["src/**/*"],  //escolhe quais arquivos dentr do rootDir serão compilados
+  "include": ["src/**/*.ts"],  //escolhe quais arquivos dentr do rootDir serão compilados
   "exclude": ["node_modules", "dist"]
 }

@@ -1,0 +1,17 @@
+services:
+  postgres-db:
+    image: postgres:16-alpine
+    container_name: saas_multi_tenant_dev
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: saas_multi_tenant_dev
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+    driver: local

@@ -1,14 +1,23 @@
 import { CommandHandler, ICommandHandler } from "@nestjs/cqrs";
-import { AutenticarUsuarioComando } from "@users/application/dtos/autenticar-usuario.comando";
-import { AutenticarUsuarioCasoDeUso } from "@users/application/use-cases/autenticar-usuario.caso-de-uso";
+import { AutenticarUsuarioCasoDeUso} from "@saas/usuarios";
+import { AutenticarUsuarioCommand, AutenticarUsuarioCommandResult } from "./autenticar-usuario.command";
+import { Result } from "@saas/shared";
 
-@CommandHandler(AutenticarUsuarioComando)
-export class AutenticarUsuarioHandler implements ICommandHandler<AutenticarUsuarioComando>{
+@CommandHandler(AutenticarUsuarioCommand)
+export class AutenticarUsuarioHandler implements ICommandHandler<AutenticarUsuarioCommand>{
     constructor(
         private readonly autenticarUsuarioCasoDeUso: AutenticarUsuarioCasoDeUso
     ){}
 
-    async execute(cmd: AutenticarUsuarioComando): Promise<any> {
-        return this.autenticarUsuarioCasoDeUso.executar(cmd);
+    async execute(cmd: AutenticarUsuarioCommand): Promise<Result<AutenticarUsuarioCommandResult>> {
+        const result = await this.autenticarUsuarioCasoDeUso.executar(cmd)
+
+        if(result.isFalha) return Result.falhar(result.falha)
+
+        const resultado = result.resultado
+        return Result.passar({
+            accessToken: resultado.accessToken,
+            refreshToken: resultado.refreshToken
+        })
     }
 }

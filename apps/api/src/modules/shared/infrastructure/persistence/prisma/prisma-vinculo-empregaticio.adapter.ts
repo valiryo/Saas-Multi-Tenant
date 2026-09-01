@@ -3,14 +3,11 @@ import type {
   PrismaClient,
 } from "database";
 
-import { VinculoEmpregaticio } from
-  "@shared/domain/entities/vinculo-empregaticio.entidade";
-
-import { IRepositorioVinculoEmpregaticio } from
-  "@shared/domain/repositories/vinculo-empregaticio.repositorio";
-
-import { Id } from
-  "@shared/domain/value-objects/id";
+import {
+  VinculoEmpregaticio,
+  IRepositorioVinculoEmpregaticio,
+  Id,
+} from "@saas/shared";
 
 import {
   PrismaVinculoEmpregaticioMapper,

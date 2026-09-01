@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { VinculoEmpregaticio } from "@shared/domain/entities/vinculo-empregaticio.entidade";
-import { TipoCargo } from "@shared/domain/enums/tipo-cargo.enum";
-import { Id } from "@shared/domain/value-objects/id";
+import { VinculoEmpregaticio, TipoCargo, Id } from "@saas/shared";
 
 import {
   PrismaVinculoEmpregaticioMapper,

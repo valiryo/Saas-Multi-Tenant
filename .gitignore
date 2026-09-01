@@ -26,6 +26,13 @@ coverage
 out/
 build
 dist
+*.tsbuildinfo
+
+# Prisma generated client
+packages/database/src/generated
+
+# Claude Code local settings
+.claude/settings.local.json
 
 
 # Debug

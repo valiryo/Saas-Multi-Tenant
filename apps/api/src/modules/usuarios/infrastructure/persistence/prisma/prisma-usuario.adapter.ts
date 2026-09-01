@@ -1,20 +1,20 @@
-import type { PrismaClient } from "database";
+import { Email } from "@saas/shared";
 
-import { Email } from "@shared/domain/value-objects/email";
-
-import { Usuario } from "@users/domain/entities/usuario.entidade";
-import { IRepositorioUsuario } from "@users/domain/repositories/usuario.repositorio";
+import { Usuario, IRepositorioUsuario } from "@saas/usuarios";
 
 import {
   PrismaUsuarioMapper,
   type PrismaUsuarioSchema,
 } from "../mappers/prisma-usuario.mapper";
+import { PrismaService } from "src/modules/database/services/prisma.service";
+import { Injectable } from "@nestjs/common";
 
+@Injectable()
 export class PrismaUsuarioAdapter
   implements IRepositorioUsuario
 {
   constructor(
-    private readonly prisma: PrismaClient,
+    private readonly prisma: PrismaService,
   ) {}
 
   public async buscarPorEmail(

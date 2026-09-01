@@ -1,12 +1,8 @@
 import type { Prisma } from "database";
 
-import { Email } from "@shared/domain/value-objects/email";
-import { Id } from "@shared/domain/value-objects/id";
-import { NomeDePessoa } from "@shared/domain/value-objects/nome-de-pessoa";
-import { Result } from "@shared/domain/value-objects/result";
+import { Email, Id, NomeDePessoa, Result } from "@saas/shared";
 
-import { Usuario } from "@users/domain/entities/usuario.entidade";
-import { SenhaHash } from "@users/domain/value-objects/senhaHash";
+import { Usuario, SenhaHash } from "@saas/usuarios";
 
 export type PrismaUsuarioSchema =
   Prisma.UsuarioGetPayload<{}>;
