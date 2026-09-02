@@ -1,6 +1,6 @@
 import type { Prisma } from "database";
 
-import { VinculoEmpregaticio, TipoCargo, Id, Result } from "@saas/shared";
+import { VinculoEmpregaticio, TipoCargo, Result } from "@saas/shared";
 
 export type PrismaVinculoEmpregaticioSchema =
   Prisma.VinculoEmpregaticioGetPayload<{}>;
@@ -13,37 +13,10 @@ export class PrismaVinculoEmpregaticioMapper {
   public static paraDominio(
     dadosPrisma: PrismaVinculoEmpregaticioSchema,
   ): Result<VinculoEmpregaticio> {
-    const id = Id.criar(dadosPrisma.id);
-
-    if (id.isFalha) {
-      return Result.falhar(id.falha);
-    }
-
-    const usuarioId = Id.criar(
-      dadosPrisma.usuarioId,
-    );
-
-    if (usuarioId.isFalha) {
-      return Result.falhar(
-        usuarioId.falha,
-      );
-    }
-
-    const organizacaoId = Id.criar(
-      dadosPrisma.organizacaoId,
-    );
-
-    if (organizacaoId.isFalha) {
-      return Result.falhar(
-        organizacaoId.falha,
-      );
-    }
-
     return VinculoEmpregaticio.criar({
-      id: id.resultado,
-      usuarioId: usuarioId.resultado,
-      organizacaoId:
-        organizacaoId.resultado,
+      id: dadosPrisma.id,
+      usuarioId: dadosPrisma.usuarioId,
+      organizacaoId: dadosPrisma.organizacaoId,
       cargo: this.cargoParaDominio(
         dadosPrisma.cargo,
       ),

@@ -27,9 +27,9 @@ describe("PrismaVinculoEmpregaticioMapper", () => {
 
   function criarVinculo(
     alteracoes: Partial<{
-      id: Id;
-      usuarioId: Id;
-      organizacaoId: Id;
+      id: string;
+      usuarioId: string;
+      organizacaoId: string;
       cargo: TipoCargo;
       ativo: boolean;
     }> = {},
@@ -39,10 +39,10 @@ describe("PrismaVinculoEmpregaticioMapper", () => {
         id: alteracoes.id,
         usuarioId:
           alteracoes.usuarioId ??
-          Id.criar().resultado,
+          Id.criar().resultado.valor,
         organizacaoId:
           alteracoes.organizacaoId ??
-          Id.criar().resultado,
+          Id.criar().resultado.valor,
         cargo:
           alteracoes.cargo ??
           TipoCargo.FUNCIONARIO,
@@ -248,9 +248,9 @@ describe("PrismaVinculoEmpregaticioMapper", () => {
     );
 
     it("deve converter os IDs para strings na persistência", () => {
-      const id = Id.criar().resultado;
-      const usuarioId = Id.criar().resultado;
-      const organizacaoId = Id.criar().resultado;
+      const id = Id.criar().resultado.valor;
+      const usuarioId = Id.criar().resultado.valor;
+      const organizacaoId = Id.criar().resultado.valor;
 
       const vinculo = criarVinculo({
         id,
@@ -263,17 +263,17 @@ describe("PrismaVinculoEmpregaticioMapper", () => {
           .paraPersistencia(vinculo);
 
       expect(resultado.id).toBe(
-        id.valor,
+        id,
       );
 
       expect(resultado.usuarioId).toBe(
-        usuarioId.valor,
+        usuarioId,
       );
 
       expect(
         resultado.organizacaoId,
       ).toBe(
-        organizacaoId.valor,
+        organizacaoId,
       );
     });
 

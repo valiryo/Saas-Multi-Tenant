@@ -36,9 +36,9 @@ describe("PrismaVinculoEmpregaticioRepositorio", () => {
 
   function criarVinculo(
     alteracoes: Partial<{
-      id: Id;
-      usuarioId: Id;
-      organizacaoId: Id;
+      id: string;
+      usuarioId: string;
+      organizacaoId: string;
       cargo: TipoCargo;
       ativo: boolean;
     }> = {},
@@ -48,11 +48,11 @@ describe("PrismaVinculoEmpregaticioRepositorio", () => {
 
       usuarioId:
         alteracoes.usuarioId ??
-        Id.criar().resultado,
+        Id.criar().resultado.valor,
 
       organizacaoId:
         alteracoes.organizacaoId ??
-        Id.criar().resultado,
+        Id.criar().resultado.valor,
 
       cargo:
         alteracoes.cargo ??

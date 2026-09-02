@@ -3,10 +3,10 @@ import { Result } from "../value-objects/result";
 
 import { TipoCargo } from "../enums/tipo-cargo.enum";
 
-interface VinculoEmpregaticioProps {
-    id?: Id;
-    usuarioId: Id;
-    organizacaoId: Id;
+export interface CriarVinculoEmpregaticioProps {
+    id?: string;
+    usuarioId: string;
+    organizacaoId: string;
     cargo: TipoCargo;
     ativo?: boolean;
 }
@@ -21,13 +21,28 @@ export class VinculoEmpregaticio {
     ) {}
 
     public static criar(
-        props: VinculoEmpregaticioProps,
+        props: CriarVinculoEmpregaticioProps,
     ): Result<VinculoEmpregaticio> {
+        const idResult = Id.criar(props.id);
+        if (idResult.isFalha) {
+            return Result.falhar(idResult.falha);
+        }
+
+        const usuarioIdResult = Id.criar(props.usuarioId);
+        if (usuarioIdResult.isFalha) {
+            return Result.falhar(usuarioIdResult.falha);
+        }
+
+        const organizacaoIdResult = Id.criar(props.organizacaoId);
+        if (organizacaoIdResult.isFalha) {
+            return Result.falhar(organizacaoIdResult.falha);
+        }
+
         return Result.passar(
             new VinculoEmpregaticio(
-                props.id ?? Id.criar().resultado,
-                props.usuarioId,
-                props.organizacaoId,
+                idResult.resultado,
+                usuarioIdResult.resultado,
+                organizacaoIdResult.resultado,
                 props.cargo,
                 props.ativo ?? true,
             ),

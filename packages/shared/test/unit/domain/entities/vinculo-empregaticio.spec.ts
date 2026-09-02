@@ -7,17 +7,17 @@ import { TipoCargo } from "../../../../src/domain/enums/tipo-cargo.enum";
 describe("VinculoEmpregaticio", () => {
     function criarPropsValidas() {
         return {
-            usuarioId: Id.criar().resultado,
-            organizacaoId: Id.criar().resultado,
+            usuarioId: Id.criar().resultado.valor,
+            organizacaoId: Id.criar().resultado.valor,
             cargo: TipoCargo.FUNCIONARIO,
         };
     }
 
     function criarVinculo(
         alteracoes: Partial<{
-            id: Id;
-            usuarioId: Id;
-            organizacaoId: Id;
+            id: string;
+            usuarioId: string;
+            organizacaoId: string;
             cargo: TipoCargo;
             ativo: boolean;
         }> = {},
@@ -49,11 +49,11 @@ describe("VinculoEmpregaticio", () => {
             const vinculo = resultado.resultado;
 
             expect(vinculo.usuarioId.valor).toBe(
-                props.usuarioId.valor,
+                props.usuarioId,
             );
 
             expect(vinculo.organizacaoId.valor).toBe(
-                props.organizacaoId.valor,
+                props.organizacaoId,
             );
 
             expect(vinculo.cargo).toBe(
@@ -72,11 +72,29 @@ describe("VinculoEmpregaticio", () => {
         });
 
         it("deve utilizar o ID informado", () => {
-            const id = Id.criar().resultado;
+            const id = Id.criar().resultado.valor;
 
             const vinculo = criarVinculo({ id });
 
-            expect(vinculo.id.valor).toBe(id.valor);
+            expect(vinculo.id.valor).toBe(id);
+        });
+
+        it("deve retornar falha quando o ID do usuário estiver mal formatado", () => {
+            const resultado = VinculoEmpregaticio.criar({
+                ...criarPropsValidas(),
+                usuarioId: "usuario-invalido",
+            });
+
+            expect(resultado.isFalha).toBe(true);
+        });
+
+        it("deve retornar falha quando o ID da organização estiver mal formatado", () => {
+            const resultado = VinculoEmpregaticio.criar({
+                ...criarPropsValidas(),
+                organizacaoId: "organizacao-invalida",
+            });
+
+            expect(resultado.isFalha).toBe(true);
         });
 
         it("deve criar o vínculo ativo por padrão", () => {
