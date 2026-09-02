@@ -125,6 +125,27 @@ describe("PrismaVinculoEmpregaticioMapper", () => {
       );
     });
 
+    it("deve converter o cargo proprietario", () => {
+      const dadosPrisma =
+        criarRegistroPrisma({
+          cargo: "PROPRIETARIO",
+        });
+
+      const resultado =
+        PrismaVinculoEmpregaticioMapper
+          .paraDominio(dadosPrisma);
+
+      if (resultado.isFalha) {
+        throw resultado.falha;
+      }
+
+      expect(
+        resultado.resultado.cargo,
+      ).toBe(
+        TipoCargo.PROPRIETARIO,
+      );
+    });
+
     it("deve reconstruir um vínculo inativo", () => {
       const dadosPrisma =
         criarRegistroPrisma({
@@ -194,6 +215,10 @@ describe("PrismaVinculoEmpregaticioMapper", () => {
       [
         TipoCargo.ADMINISTRADOR,
         "ADMINISTRADOR",
+      ],
+      [
+        TipoCargo.PROPRIETARIO,
+        "PROPRIETARIO",
       ],
     ] as const)(
       "deve converter o cargo %s para o Prisma",

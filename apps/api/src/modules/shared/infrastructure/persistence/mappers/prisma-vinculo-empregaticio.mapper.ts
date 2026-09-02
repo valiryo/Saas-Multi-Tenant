@@ -77,6 +77,8 @@ export class PrismaVinculoEmpregaticioMapper {
     cargo: PrismaTipoCargo,
   ): TipoCargo {
     switch (cargo) {
+      case "PROPRIETARIO":
+        return TipoCargo.PROPRIETARIO;
       case "ADMINISTRADOR":
         return TipoCargo.ADMINISTRADOR;
 
@@ -93,6 +95,9 @@ export class PrismaVinculoEmpregaticioMapper {
     cargo: TipoCargo,
   ): PrismaTipoCargo {
     switch (cargo) {
+      case TipoCargo.PROPRIETARIO:
+        return "PROPRIETARIO";
+
       case TipoCargo.ADMINISTRADOR:
         return "ADMINISTRADOR";
 
