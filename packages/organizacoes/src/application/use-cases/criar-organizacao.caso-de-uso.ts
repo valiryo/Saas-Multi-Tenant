@@ -1,5 +1,6 @@
 import { Organizacao, OrganizacaoProps } from "../../domain";
 import { CriarOrganizacaoInput } from "../dtos/criar-organizacao.input";
+import { OrganizacaoOutput } from "../dtos/organizacao.output";
 import { Result } from "@saas/shared";
 import { IRepositorioOrganizacao } from "../../domain";
 import { OrganizacaoJaExistenteError } from "../../domain";
@@ -11,7 +12,7 @@ export class CriarOrganizacaoCasoDeUso {
         private readonly organizacaoRepo: IRepositorioOrganizacao,
     ){}
 
-    async executar(input: CriarOrganizacaoInput): Promise<Result<Organizacao>> {
+    async executar(input: CriarOrganizacaoInput): Promise<Result<OrganizacaoOutput>> {
         const nomeResult = NomeDaOrganizacao.criar(input.nome);
         if (nomeResult.isFalha) {
             return Result.falhar(nomeResult.falha);
@@ -47,6 +48,13 @@ export class CriarOrganizacaoCasoDeUso {
         // 3. Persistência
         await this.organizacaoRepo.salvar(novaOrganizacao);
 
-        return Result.passar(novaOrganizacao);
+        // 4. Mapeamento para o DTO de saída
+        const output: OrganizacaoOutput = {
+            id: novaOrganizacao.id.valor,
+            nome: novaOrganizacao.nome.valor,
+            slug: novaOrganizacao.slug.valor,
+        };
+
+        return Result.passar(output);
     }
 }

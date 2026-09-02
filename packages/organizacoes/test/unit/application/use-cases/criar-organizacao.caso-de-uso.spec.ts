@@ -26,8 +26,12 @@ describe('CriarOrganizacaoCasoDeUso', () => {
         const result = await sut.executar(input);
 
         expect(result.isSucesso).toBe(true);
-        expect(result.resultado.nome.valor).toBe(input.nome);
-        expect(result.resultado.slug.valor).toBe('empresa-teste');
+        // Garante que o retorno é o DTO plano (id/nome/slug), e não a entidade Organizacao
+        expect(result.resultado).toEqual({
+            id: expect.any(String),
+            nome: input.nome,
+            slug: 'empresa-teste',
+        });
         expect(organizacaoRepository.salvar).toHaveBeenCalled();
     });
 
@@ -42,7 +46,7 @@ describe('CriarOrganizacaoCasoDeUso', () => {
         const result = await sut.executar(input);
 
         expect(result.isSucesso).toBe(true);
-        expect(result.resultado.slug.valor).toBe('slug-customizado');
+        expect(result.resultado.slug).toBe('slug-customizado');
     });
 
     it('não deve permitir criação com slug duplicado', async () => {

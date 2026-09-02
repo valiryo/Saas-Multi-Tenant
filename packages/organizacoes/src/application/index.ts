@@ -3,4 +3,5 @@
  */
 
 export * from "./dtos/criar-organizacao.input";
+export * from "./dtos/organizacao.output";
 export * from "./use-cases/criar-organizacao.caso-de-uso";
