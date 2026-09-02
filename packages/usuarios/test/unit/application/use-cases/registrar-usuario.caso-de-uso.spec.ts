@@ -57,4 +57,46 @@ describe('RegistrarUsuarioCasoDeUso', () => {
         expect(result.falha).toBeInstanceOf(UsuarioJaExistenteError);
         expect(userRepository.salvar).not.toHaveBeenCalled();
     });
+
+    it('não deve registrar com um email em formato inválido', async () => {
+        const input = {
+            nome: 'Test User',
+            email: 'email-invalido',
+            senha: 'Password123!',
+        };
+
+        const result = await sut.executar(input);
+
+        expect(result.isFalha).toBe(true);
+        expect(userRepository.buscarPorEmail).not.toHaveBeenCalled();
+        expect(userRepository.salvar).not.toHaveBeenCalled();
+    });
+
+    it('não deve registrar com uma senha fraca', async () => {
+        const input = {
+            nome: 'Test User',
+            email: 'test@example.com',
+            senha: 'fraca',
+        };
+
+        const result = await sut.executar(input);
+
+        expect(result.isFalha).toBe(true);
+        expect(userRepository.buscarPorEmail).not.toHaveBeenCalled();
+        expect(userRepository.salvar).not.toHaveBeenCalled();
+    });
+
+    it('não deve registrar com um nome inválido', async () => {
+        const input = {
+            nome: 'X',
+            email: 'test@example.com',
+            senha: 'Password123!',
+        };
+
+        const result = await sut.executar(input);
+
+        expect(result.isFalha).toBe(true);
+        expect(userRepository.buscarPorEmail).not.toHaveBeenCalled();
+        expect(userRepository.salvar).not.toHaveBeenCalled();
+    });
 });

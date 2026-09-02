@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { BcryptServicoCriptografia } from '@shared/infrastructure/services/bcrypt-servico-criptografia';
+import { BcryptServicoCriptografia } from '@users/infrastructure/services/bcrypt-servico-criptografia';
 
 describe('BcryptServicoCriptografia', () => {
     let servicoCriptografia: BcryptServicoCriptografia;

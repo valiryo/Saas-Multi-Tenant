@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { Email, NomeDePessoa } from "@saas/shared";
 import { AutenticarUsuarioCasoDeUso } from "../../../../src/application/use-cases/autenticar-usuario.caso-de-uso";
+import { IServicoTokenAutenticacao } from "../../../../src/application/ports/servico-token-autenticacao.service";
 import {
     Usuario,
     IRepositorioUsuario,
@@ -13,6 +14,7 @@ describe("AutenticarUsuarioCasoDeUso (TDD)", () => {
     let casoDeUso: AutenticarUsuarioCasoDeUso;
     let mockUsuarioRepo: IRepositorioUsuario;
     let mockCriptografia: IServicoCriptografia;
+    let mockServicoAutenticacao: IServicoTokenAutenticacao;
     let usuarioExistente: Usuario;
 
     beforeEach(() => {
@@ -26,19 +28,29 @@ describe("AutenticarUsuarioCasoDeUso (TDD)", () => {
             comparar: vi.fn(),
         };
 
-        casoDeUso = new AutenticarUsuarioCasoDeUso(mockUsuarioRepo, mockCriptografia);
+        mockServicoAutenticacao = {
+            gerarTokens: vi.fn(),
+        };
+
+        casoDeUso = new AutenticarUsuarioCasoDeUso(mockUsuarioRepo, mockCriptografia, mockServicoAutenticacao);
 
         // Usuário de teste
         const email = Email.criar("usuario@teste.com").resultado;
         const senhaHash = SenhaHash.criar("$2b$10$hashedpassword").resultado;
         const nome = NomeDePessoa.criar("João Silva").resultado;
-        
+
         usuarioExistente = Usuario.criar({ email, senhaHash, nome }).resultado;
     });
 
     it("deve autenticar com sucesso quando as credenciais forem válidas", async () => {
         vi.spyOn(mockUsuarioRepo, "buscarPorEmail").mockResolvedValue(usuarioExistente);
         vi.spyOn(mockCriptografia, "comparar").mockResolvedValue(true);
+
+        const tokensEsperados = {
+            accessToken: "access-token-fake",
+            refreshToken: "refresh-token-fake",
+        };
+        vi.spyOn(mockServicoAutenticacao, "gerarTokens").mockResolvedValue(tokensEsperados);
 
         const comando = {
             email: "usuario@teste.com",
@@ -50,12 +62,13 @@ describe("AutenticarUsuarioCasoDeUso (TDD)", () => {
 
         // Assert
         expect(resultado.isSucesso).toBe(true);
-        expect(resultado.resultado).toEqual({
-            id: usuarioExistente.id.valor,
+        expect(resultado.resultado).toEqual(tokensEsperados);
+        expect(mockCriptografia.comparar).toHaveBeenCalledWith("SenhaForte123!", usuarioExistente.senhaHash.valor);
+        expect(mockServicoAutenticacao.gerarTokens).toHaveBeenCalledWith({
+            sub: usuarioExistente.id.valor,
             email: usuarioExistente.email.valor,
             nome: usuarioExistente.nome.nomeCompleto,
         });
-        expect(mockCriptografia.comparar).toHaveBeenCalledWith("SenhaForte123!", usuarioExistente.senhaHash.valor);
     });
 
     it("deve falhar se o e-mail não estiver cadastrado", async () => {
@@ -71,6 +84,7 @@ describe("AutenticarUsuarioCasoDeUso (TDD)", () => {
 
         expect(resultado.isFalha).toBe(true);
         expect(resultado.falha).toBeInstanceOf(CredenciaisInvalidasError);
+        expect(mockServicoAutenticacao.gerarTokens).not.toHaveBeenCalled();
     });
 
     it("deve falhar se a senha estiver incorreta", async () => {
@@ -86,6 +100,7 @@ describe("AutenticarUsuarioCasoDeUso (TDD)", () => {
 
         expect(resultado.isFalha).toBe(true);
         expect(resultado.falha).toBeInstanceOf(CredenciaisInvalidasError);
+        expect(mockServicoAutenticacao.gerarTokens).not.toHaveBeenCalled();
     });
 
     it("deve retornar falha se o formato do e-mail for inválido", async () => {
@@ -98,5 +113,18 @@ describe("AutenticarUsuarioCasoDeUso (TDD)", () => {
 
         expect(resultado.isFalha).toBe(true);
         expect(resultado.falha.message).toContain("não é um email válido");
+        expect(mockUsuarioRepo.buscarPorEmail).not.toHaveBeenCalled();
+    });
+
+    it("deve retornar falha se a senha informada não for forte o suficiente", async () => {
+        const comando = {
+            email: "usuario@teste.com",
+            senha: "fraca"
+        };
+
+        const resultado = await casoDeUso.executar(comando);
+
+        expect(resultado.isFalha).toBe(true);
+        expect(mockUsuarioRepo.buscarPorEmail).not.toHaveBeenCalled();
     });
 });
