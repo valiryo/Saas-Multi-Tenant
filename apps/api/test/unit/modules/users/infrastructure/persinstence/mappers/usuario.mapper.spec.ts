@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { Email, Id, NomeDePessoa } from '@saas/shared';
-
-import { Usuario, SenhaHash } from '@saas/usuarios';
+import { Usuario } from '@saas/usuarios';
 
 import {
   PrismaUsuarioMapper,
@@ -36,10 +34,10 @@ describe('PrismaUsuarioMapper', () => {
 
   function criarUsuario(): Usuario {
     const resultado = Usuario.criar({
-      id: Id.criar(usuarioId).resultado,
-      nome: NomeDePessoa.criar(nome).resultado,
-      email: Email.criar(email).resultado,
-      senhaHash: SenhaHash.criar(senhaHash).resultado,
+      id: usuarioId,
+      nome,
+      email,
+      senhaHash,
     });
 
     expect(resultado.isSucesso).toBe(true);

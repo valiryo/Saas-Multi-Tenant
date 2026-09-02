@@ -1,12 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { Email, NomeDePessoa } from "@saas/shared";
 import { AutenticarUsuarioCasoDeUso } from "../../../../src/application/use-cases/autenticar-usuario.caso-de-uso";
 import { IServicoTokenAutenticacao } from "../../../../src/application/ports/servico-token-autenticacao.service";
 import {
     Usuario,
     IRepositorioUsuario,
     IServicoCriptografia,
-    SenhaHash,
     CredenciaisInvalidasError,
 } from "../../../../src/domain";
 
@@ -35,11 +33,11 @@ describe("AutenticarUsuarioCasoDeUso (TDD)", () => {
         casoDeUso = new AutenticarUsuarioCasoDeUso(mockUsuarioRepo, mockCriptografia, mockServicoAutenticacao);
 
         // Usuário de teste
-        const email = Email.criar("usuario@teste.com").resultado;
-        const senhaHash = SenhaHash.criar("$2b$10$hashedpassword").resultado;
-        const nome = NomeDePessoa.criar("João Silva").resultado;
-
-        usuarioExistente = Usuario.criar({ email, senhaHash, nome }).resultado;
+        usuarioExistente = Usuario.criar({
+            email: "usuario@teste.com",
+            senhaHash: "$2b$10$hashedpassword",
+            nome: "João Silva",
+        }).resultado;
     });
 
     it("deve autenticar com sucesso quando as credenciais forem válidas", async () => {

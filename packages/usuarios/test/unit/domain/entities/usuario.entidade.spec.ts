@@ -1,26 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { Email, Id, NomeDePessoa } from "@saas/shared";
 
 import { Usuario } from "../../../../src/domain/entities/usuario.entidade";
-import { SenhaHash } from "../../../../src/domain/value-objects/senhaHash";
+import { CriarUsuarioProps } from "../../../../src/domain/entities/usuario.entidade";
 
 describe("Usuario", () => {
-    function criarPropsValidas() {
+    function criarPropsValidas(): CriarUsuarioProps {
         return {
-            email: Email.criar("usuario@teste.com").resultado,
-            senhaHash: SenhaHash.criar("$2b$10$hashedpassword").resultado,
-            nome: NomeDePessoa.criar("João Silva").resultado,
+            email: "usuario@teste.com",
+            senhaHash: "$2b$10$hashedpassword",
+            nome: "João Silva",
         };
     }
 
-    function criarUsuario(
-        alteracoes: Partial<{
-            id: Id;
-            email: Email;
-            senhaHash: SenhaHash;
-            nome: NomeDePessoa;
-        }> = {},
-    ): Usuario {
+    function criarUsuario(alteracoes: Partial<CriarUsuarioProps> = {}): Usuario {
         const resultado = Usuario.criar({
             ...criarPropsValidas(),
             ...alteracoes,
@@ -34,7 +26,7 @@ describe("Usuario", () => {
     }
 
     describe("criar", () => {
-        it("deve criar um usuário válido a partir de value objects válidos", () => {
+        it("deve criar um usuário válido a partir de dados brutos válidos", () => {
             const props = criarPropsValidas();
 
             const resultado = Usuario.criar(props);
@@ -47,9 +39,9 @@ describe("Usuario", () => {
 
             const usuario = resultado.resultado;
 
-            expect(usuario.email.valor).toBe(props.email.valor);
-            expect(usuario.senhaHash.valor).toBe(props.senhaHash.valor);
-            expect(usuario.nome.nomeCompleto).toBe(props.nome.nomeCompleto);
+            expect(usuario.email.valor).toBe(props.email);
+            expect(usuario.senhaHash.valor).toBe(props.senhaHash);
+            expect(usuario.nome.nomeCompleto).toBe(props.nome);
         });
 
         it("deve gerar um ID quando ele não for informado", () => {
@@ -61,11 +53,11 @@ describe("Usuario", () => {
         });
 
         it("deve utilizar o ID informado quando ele for fornecido", () => {
-            const id = Id.criar().resultado;
+            const id = "550e8400-e29b-41d4-a716-446655440000";
 
             const usuario = criarUsuario({ id });
 
-            expect(usuario.id.valor).toBe(id.valor);
+            expect(usuario.id.valor).toBe(id);
         });
 
         it("deve gerar IDs diferentes para usuários distintos quando o ID não for informado", () => {
@@ -73,6 +65,33 @@ describe("Usuario", () => {
             const usuarioB = criarUsuario();
 
             expect(usuarioA.id.valor).not.toBe(usuarioB.id.valor);
+        });
+
+        it("deve retornar falha quando o email for inválido", () => {
+            const resultado = Usuario.criar({
+                ...criarPropsValidas(),
+                email: "email-invalido",
+            });
+
+            expect(resultado.isFalha).toBe(true);
+        });
+
+        it("deve retornar falha quando o nome for inválido", () => {
+            const resultado = Usuario.criar({
+                ...criarPropsValidas(),
+                nome: "X",
+            });
+
+            expect(resultado.isFalha).toBe(true);
+        });
+
+        it("deve retornar falha quando o ID informado estiver mal formatado", () => {
+            const resultado = Usuario.criar({
+                ...criarPropsValidas(),
+                id: "id-invalido",
+            });
+
+            expect(resultado.isFalha).toBe(true);
         });
     });
 });
