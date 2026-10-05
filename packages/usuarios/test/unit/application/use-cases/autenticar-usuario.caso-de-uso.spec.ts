@@ -1,128 +1,206 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { AutenticarUsuarioCasoDeUso } from "../../../../src/application/use-cases/autenticar-usuario.caso-de-uso";
-import { IServicoTokenAutenticacao } from "../../../../src/application/ports/servico-token-autenticacao.service";
+import ms from "ms";
 import {
-    Usuario,
+    Id,
+    IpInvalidoError,
+    IRepositorioVinculoEmpregaticio,
+    TipoCargo,
+    VinculoEmpregaticio,
+} from "@saas/shared";
+import {
+    AutenticarUsuarioCasoDeUso,
+    AutenticarUsuarioInput,
+    CredenciaisInvalidasError,
+    DURACAO_SESSAO,
+    IRepositorioSessao,
     IRepositorioUsuario,
     IServicoCriptografia,
-    CredenciaisInvalidasError,
-} from "../../../../src/domain";
+    IServicoTokenAutenticacao,
+    Sessao,
+    Usuario,
+} from "../../../../src";
 
-describe("AutenticarUsuarioCasoDeUso (TDD)", () => {
+describe("AutenticarUsuarioCasoDeUso", () => {
+    const EMAIL = "dev@mail.com";
+
     let casoDeUso: AutenticarUsuarioCasoDeUso;
-    let mockUsuarioRepo: IRepositorioUsuario;
-    let mockCriptografia: IServicoCriptografia;
-    let mockServicoAutenticacao: IServicoTokenAutenticacao;
-    let usuarioExistente: Usuario;
+    let usuarioRepoMock: IRepositorioUsuario;
+    let vinculoRepoMock: IRepositorioVinculoEmpregaticio;
+    let sessaoRepoMock: IRepositorioSessao;
+    let criptografiaMock: IServicoCriptografia;
+    let servicoAutenticacaoMock: IServicoTokenAutenticacao;
+    let usuario: Usuario;
+
+    function criarInput(alteracoes: Partial<AutenticarUsuarioInput> = {}): AutenticarUsuarioInput {
+        return {
+            email: EMAIL,
+            senha: "SenhaForte123!",
+            userAgent: "Mozilla/5.0 (Windows NT 10.0)",
+            ipAddress: "127.0.0.1",
+            ...alteracoes,
+        };
+    }
+
+    function sessaoSalva(): Sessao {
+        return vi.mocked(sessaoRepoMock.salvar).mock.calls[0]![0];
+    }
 
     beforeEach(() => {
-        mockUsuarioRepo = {
-            buscarPorEmail: vi.fn(),
-            salvar: vi.fn(),
-        };
-
-        mockCriptografia = {
-            criptografar: vi.fn(),
-            comparar: vi.fn(),
-        };
-
-        mockServicoAutenticacao = {
-            gerarTokens: vi.fn(),
-        };
-
-        casoDeUso = new AutenticarUsuarioCasoDeUso(mockUsuarioRepo, mockCriptografia, mockServicoAutenticacao);
-
-        // Usuário de teste
-        usuarioExistente = Usuario.criar({
-            email: "usuario@teste.com",
-            senhaHash: "$2b$10$hashedpassword",
-            nome: "João Silva",
+        usuario = Usuario.criar({
+            nome: "Dev Teste",
+            email: EMAIL,
+            senhaHash: "hash_validado",
         }).resultado;
+
+        usuarioRepoMock = {
+            buscarPorId: vi.fn(),
+            buscarPorEmail: vi.fn().mockResolvedValue(usuario),
+            salvar: vi.fn(),
+        } as unknown as IRepositorioUsuario;
+
+        vinculoRepoMock = {
+            listarAtivosPorUsuario: vi.fn().mockResolvedValue([]),
+        } as unknown as IRepositorioVinculoEmpregaticio;
+
+        sessaoRepoMock = {
+            salvar: vi.fn(),
+            buscarPorId: vi.fn(),
+            buscarAtivasPorUsuarioId: vi.fn(),
+            revogarTodasDoUsuario: vi.fn(),
+        } as unknown as IRepositorioSessao;
+
+        criptografiaMock = {
+            criptografar: vi.fn(),
+            comparar: vi.fn().mockResolvedValue(true),
+        } as unknown as IServicoCriptografia;
+
+        servicoAutenticacaoMock = {
+            gerarTokens: vi.fn().mockResolvedValue({
+                accessToken: "access_token_mock",
+                refreshToken: "refresh_token_mock",
+            }),
+            verificarRefreshToken: vi.fn(),
+        } as unknown as IServicoTokenAutenticacao;
+
+        casoDeUso = new AutenticarUsuarioCasoDeUso(
+            usuarioRepoMock,
+            vinculoRepoMock,
+            sessaoRepoMock,
+            criptografiaMock,
+            servicoAutenticacaoMock
+        );
     });
 
-    it("deve autenticar com sucesso quando as credenciais forem válidas", async () => {
-        vi.spyOn(mockUsuarioRepo, "buscarPorEmail").mockResolvedValue(usuarioExistente);
-        vi.spyOn(mockCriptografia, "comparar").mockResolvedValue(true);
+    describe("sucesso", () => {
+        it("deve retornar os tokens gerados", async () => {
+            const resultado = await casoDeUso.executar(criarInput());
 
-        const tokensEsperados = {
-            accessToken: "access-token-fake",
-            refreshToken: "refresh-token-fake",
-        };
-        vi.spyOn(mockServicoAutenticacao, "gerarTokens").mockResolvedValue(tokensEsperados);
+            expect(resultado.isSucesso).toBe(true);
+            expect(resultado.resultado).toEqual({
+                accessToken: "access_token_mock",
+                refreshToken: "refresh_token_mock",
+            });
+        });
 
-        const comando = {
-            email: "usuario@teste.com",
-            senha: "SenhaForte123!"
-        };
+        it("deve comparar a senha informada com o hash do usuário", async () => {
+            await casoDeUso.executar(criarInput());
 
-        // Act
-        const resultado = await casoDeUso.executar(comando);
+            expect(criptografiaMock.comparar).toHaveBeenCalledWith("SenhaForte123!", "hash_validado");
+        });
 
-        // Assert
-        expect(resultado.isSucesso).toBe(true);
-        expect(resultado.resultado).toEqual(tokensEsperados);
-        expect(mockCriptografia.comparar).toHaveBeenCalledWith("SenhaForte123!", usuarioExistente.senhaHash.valor);
-        expect(mockServicoAutenticacao.gerarTokens).toHaveBeenCalledWith({
-            sub: usuarioExistente.id.valor,
-            email: usuarioExistente.email.valor,
-            nome: usuarioExistente.nome.nomeCompleto,
+        it("deve salvar uma nova sessão ativa com os dados do dispositivo", async () => {
+            await casoDeUso.executar(criarInput());
+
+            expect(sessaoRepoMock.salvar).toHaveBeenCalledTimes(1);
+
+            const sessao = sessaoSalva();
+            expect(sessao.usuarioId.valor).toBe(usuario.id.valor);
+            expect(sessao.ipAddress.valor).toBe("127.0.0.1");
+            expect(sessao.userAgent).toBe("Mozilla/5.0 (Windows NT 10.0)");
+            expect(sessao.ativo).toBe(true);
+        });
+
+        it("deve criar a sessão expirando após DURACAO_SESSAO", async () => {
+            await casoDeUso.executar(criarInput());
+
+            const sessao = sessaoSalva();
+            expect(sessao.expiraEm.getTime() - sessao.criadaEm.getTime()).toBe(ms(DURACAO_SESSAO));
+        });
+
+        it("deve gerar tokens com o sid da sessão salva e os vínculos ativos do usuário", async () => {
+            const organizacaoId = Id.criar().resultado.valor;
+            const vinculo = VinculoEmpregaticio.criar({
+                usuarioId: usuario.id.valor,
+                organizacaoId,
+                cargo: TipoCargo.PROPRIETARIO,
+            }).resultado;
+            vi.mocked(vinculoRepoMock.listarAtivosPorUsuario).mockResolvedValue([vinculo]);
+
+            await casoDeUso.executar(criarInput());
+
+            expect(vinculoRepoMock.listarAtivosPorUsuario).toHaveBeenCalledWith(usuario.id);
+            expect(servicoAutenticacaoMock.gerarTokens).toHaveBeenCalledWith({
+                sid: sessaoSalva().sid.valor,
+                sub: usuario.id.valor,
+                email: EMAIL,
+                vinculoProps: [
+                    {
+                        organizacaoId,
+                        tipoCargo: TipoCargo.PROPRIETARIO,
+                    },
+                ],
+            });
+        });
+
+        it("deve gerar tokens com vinculoProps vazio quando o usuário não tiver vínculos ativos", async () => {
+            await casoDeUso.executar(criarInput());
+
+            expect(servicoAutenticacaoMock.gerarTokens).toHaveBeenCalledWith(
+                expect.objectContaining({ vinculoProps: [] }),
+            );
+        });
+
+        it("não deve exigir que a senha atenda à política de senha forte", async () => {
+            const resultado = await casoDeUso.executar(criarInput({ senha: "fraca" }));
+
+            expect(resultado.isSucesso).toBe(true);
         });
     });
 
-    it("deve falhar se o e-mail não estiver cadastrado", async () => {
-        // Arrange
-        vi.spyOn(mockUsuarioRepo, "buscarPorEmail").mockResolvedValue(null);
+    describe("falhas", () => {
+        async function expectFalhaSemEfeitos(input: AutenticarUsuarioInput, erro: Function) {
+            const resultado = await casoDeUso.executar(input);
 
-        const comando = {
-            email: "nao_existe@teste.com",
-            senha: "QualquerSenha123!"
-        };
+            expect(resultado.isFalha).toBe(true);
+            expect(resultado.falha).toBeInstanceOf(erro);
+            expect(sessaoRepoMock.salvar).not.toHaveBeenCalled();
+            expect(servicoAutenticacaoMock.gerarTokens).not.toHaveBeenCalled();
+        }
 
-        const resultado = await casoDeUso.executar(comando);
+        it("deve retornar CredenciaisInvalidasError se o e-mail for mal formatado", async () => {
+            await expectFalhaSemEfeitos(criarInput({ email: "email-invalido" }), CredenciaisInvalidasError);
+            expect(usuarioRepoMock.buscarPorEmail).not.toHaveBeenCalled();
+        });
 
-        expect(resultado.isFalha).toBe(true);
-        expect(resultado.falha).toBeInstanceOf(CredenciaisInvalidasError);
-        expect(mockServicoAutenticacao.gerarTokens).not.toHaveBeenCalled();
-    });
+        it("deve retornar CredenciaisInvalidasError se a senha estiver vazia", async () => {
+            await expectFalhaSemEfeitos(criarInput({ senha: "" }), CredenciaisInvalidasError);
+            expect(usuarioRepoMock.buscarPorEmail).not.toHaveBeenCalled();
+        });
 
-    it("deve falhar se a senha estiver incorreta", async () => {
-        vi.spyOn(mockUsuarioRepo, "buscarPorEmail").mockResolvedValue(usuarioExistente);
-        vi.spyOn(mockCriptografia, "comparar").mockResolvedValue(false); // Senha errada
+        it("deve retornar CredenciaisInvalidasError se o e-mail for inexistente", async () => {
+            vi.mocked(usuarioRepoMock.buscarPorEmail).mockResolvedValue(null);
 
-        const comando = {
-            email: "usuario@teste.com",
-            senha: "SenhaIncorreta123!"
-        };
+            await expectFalhaSemEfeitos(criarInput(), CredenciaisInvalidasError);
+        });
 
-        const resultado = await casoDeUso.executar(comando);
+        it("deve retornar CredenciaisInvalidasError se a senha estiver incorreta", async () => {
+            vi.mocked(criptografiaMock.comparar).mockResolvedValue(false);
 
-        expect(resultado.isFalha).toBe(true);
-        expect(resultado.falha).toBeInstanceOf(CredenciaisInvalidasError);
-        expect(mockServicoAutenticacao.gerarTokens).not.toHaveBeenCalled();
-    });
+            await expectFalhaSemEfeitos(criarInput(), CredenciaisInvalidasError);
+        });
 
-    it("deve retornar falha se o formato do e-mail for inválido", async () => {
-        const comando = {
-            email: "email-invalido",
-            senha: "QualquerSenha123!"
-        };
-
-        const resultado = await casoDeUso.executar(comando);
-
-        expect(resultado.isFalha).toBe(true);
-        expect(resultado.falha.message).toContain("não é um email válido");
-        expect(mockUsuarioRepo.buscarPorEmail).not.toHaveBeenCalled();
-    });
-
-    it("deve retornar falha se a senha informada não for forte o suficiente", async () => {
-        const comando = {
-            email: "usuario@teste.com",
-            senha: "fraca"
-        };
-
-        const resultado = await casoDeUso.executar(comando);
-
-        expect(resultado.isFalha).toBe(true);
-        expect(mockUsuarioRepo.buscarPorEmail).not.toHaveBeenCalled();
+        it("deve retornar IpInvalidoError se o IP for mal formatado", async () => {
+            await expectFalhaSemEfeitos(criarInput({ ipAddress: "ip-invalido" }), IpInvalidoError);
+        });
     });
 });

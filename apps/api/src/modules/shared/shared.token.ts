@@ -1,0 +1,1 @@
+export const REPOSITORIO_VINCULO_EMPREGATICIO_TOKEN = "IRepositorioVinculoEmpregaticio"

@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 
 import {
   IServicoTokenAutenticacao,
+  RefreshTokenPayload,
   TokenPayload,
   TokensAutenticacao,
 } from '@saas/usuarios';
@@ -41,6 +42,7 @@ export class JwtServicoTokenAutenticacao
         this.jwtService.signAsync(
           {
             sub: payload.sub,
+            sid: payload.sid,
             type: 'refresh',
           },
           {
@@ -55,5 +57,28 @@ export class JwtServicoTokenAutenticacao
       accessToken,
       refreshToken,
     };
+  }
+
+  async verificarRefreshToken(
+    refreshToken: string,
+  ): Promise<RefreshTokenPayload | null> {
+    try {
+      const payload = await this.jwtService.verifyAsync<
+        RefreshTokenPayload & { type?: string }
+      >(refreshToken, {
+        secret: this.config.jwtRefreshSecret,
+      });
+
+      if (payload.type !== 'refresh') {
+        return null;
+      }
+
+      return {
+        sub: payload.sub,
+        sid: payload.sid,
+      };
+    } catch {
+      return null;
+    }
   }
 }

@@ -1,4 +1,4 @@
-import type { PrismaClient } from "database";
+import type { PrismaService } from "src/modules/database/services/prisma.service";
 
 import {
   beforeEach,
@@ -68,7 +68,7 @@ describe("PrismaVinculoEmpregaticioRepositorio", () => {
     return resultado.resultado;
   }
 
-  let prisma: PrismaClient;
+  let prisma: PrismaService;
 
   let vinculoPrisma: {
     findUnique: ReturnType<typeof vi.fn>;
@@ -125,7 +125,7 @@ describe("PrismaVinculoEmpregaticioRepositorio", () => {
           ) => Promise<unknown>,
         ) => callback(transacao),
       ),
-    } as unknown as PrismaClient;
+    } as unknown as PrismaService;
 
     repositorio =
       new PrismaVinculoEmpregaticioAdapter(

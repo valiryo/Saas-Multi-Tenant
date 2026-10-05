@@ -10,6 +10,7 @@ describe('RegistrarUsuarioCasoDeUso', () => {
     beforeEach(() => {
         // Criando Mocks das Interfaces (Ports)
         userRepository = {
+            buscarPorId: vi.fn(),
             buscarPorEmail: vi.fn(),
             salvar: vi.fn(),
         } as unknown as IRepositorioUsuario;

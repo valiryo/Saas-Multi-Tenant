@@ -1,7 +1,5 @@
-import type {
-  Prisma,
-  PrismaClient,
-} from "database";
+import { Injectable } from "@nestjs/common";
+import type { Prisma } from "database";
 
 import {
   VinculoEmpregaticio,
@@ -9,16 +7,19 @@ import {
   Id,
 } from "@saas/shared";
 
+import { PrismaService } from "src/modules/database/services/prisma.service";
+
 import {
   PrismaVinculoEmpregaticioMapper,
   type PrismaVinculoEmpregaticioSchema,
 } from "../mappers/prisma-vinculo-empregaticio.mapper";
 
+@Injectable()
 export class PrismaVinculoEmpregaticioAdapter
   implements IRepositorioVinculoEmpregaticio
 {
   public constructor(
-    private readonly prisma: PrismaClient,
+    private readonly prisma: PrismaService,
   ) {}
 
   public async buscarPorId(

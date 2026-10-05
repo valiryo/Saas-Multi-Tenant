@@ -7,10 +7,20 @@ import {
 } from '@nestjs/common';
 
 import type { Request, Response } from 'express';
+import { ErroDeDominio } from '@saas/shared';
+import { DomainExceptionFilter } from './domain-exception.filter';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
+  private readonly domainExceptionFilter = new DomainExceptionFilter();
+
   catch(exception: unknown, host: ArgumentsHost) {
+    // Este filtro (catch-all, registrado em main.ts) tem precedência sobre o DomainExceptionFilter
+    // registrado via APP_FILTER; por isso erros de domínio são delegados explicitamente.
+    if (exception instanceof ErroDeDominio) {
+      return this.domainExceptionFilter.catch(exception, host);
+    }
+
     const context = host.switchToHttp();
 
     const response = context.getResponse<Response>();

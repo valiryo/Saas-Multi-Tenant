@@ -1,19 +1,25 @@
-import { BadRequestException, Controller, HttpCode, HttpStatus, Post, UnauthorizedException, Body, Inject, Req, Res } from "@nestjs/common";
-import { CommandBus } from "@nestjs/cqrs";
+import { BadRequestException, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, UnauthorizedException, Body, Inject, Req, Res } from "@nestjs/common";
+import { CommandBus, QueryBus } from "@nestjs/cqrs";
 import { AutenticarUsuarioCommand } from "@users/infrastructure/cqrs/autenticar-usuario.command";
+import { RenovarTokensCommand } from "@users/infrastructure/cqrs/renovar-tokens.command";
+import { EncerrarSessaoCommand } from "@users/infrastructure/cqrs/encerrar-sessao.command";
+import { EncerrarOutrasSessoesCommand } from "@users/infrastructure/cqrs/encerrar-outras-sessoes.command";
+import { ListarSessoesAtivasQuery } from "@users/infrastructure/cqrs/listar-sessoes-ativas.query";
 import { Public } from "./infrastructure/decorators/public-route.decorator";
-import type { Request, Response } from "express";
+import { CurrentUser } from "./infrastructure/decorators/current-user.decorator";
+import type { CookieOptions, Request, Response } from "express";
 import type { ConfigType } from "@nestjs/config";
 import { apiConfig } from "src/config/api.config";
 import ms from "ms";
-import { JwtService } from "@nestjs/jwt";
-import { TokenPayload } from "@saas/usuarios";
+import { DURACAO_SESSAO, type TokenPayload } from "@saas/usuarios";
+
+const REFRESH_TOKEN_COOKIE = 'refresh_token';
 
 @Controller('auth')
 export class AuthController {
     constructor(
-        private readonly jwtService: JwtService,
         private readonly commandBus: CommandBus,
+        private readonly queryBus: QueryBus,
         @Inject(apiConfig.KEY)
         private readonly config: ConfigType<typeof apiConfig>
     ) { }
@@ -21,68 +27,106 @@ export class AuthController {
     @Public()
     @Post("login")
     @HttpCode(HttpStatus.OK)
-    async login(@Body() body: any, @Res({ passthrough: true }) response: Response) {
-        const { email, senha } = body;
+    async login(@Body() body: any, @Req() request: Request, @Res({ passthrough: true }) response: Response) {
+        const { email, senha } = body ?? {};
         if (!email || !senha) {
             throw new BadRequestException('Email e senha são obrigatórios');
         }
 
-        const cmd = new AutenticarUsuarioCommand(email, senha)
+        const cmd = new AutenticarUsuarioCommand(
+            email,
+            senha,
+            request.ip ?? '',
+            request.headers['user-agent'] ?? 'desconhecido',
+        )
         const result = await this.commandBus.execute(cmd)
 
         if (result.isFalha) throw result.falha
         const { accessToken, refreshToken } = result.resultado
 
-        response.cookie('refresh_token', refreshToken, {
-            httpOnly: true,
-            secure: this.config.nodeEnv === 'production',
-            sameSite: 'strict',
-            maxAge: ms('7 days')
-        })
+        this.definirCookieRefresh(response, refreshToken)
 
-        return {accessToken: accessToken}
+        return { accessToken }
     }
 
     @Public()
     @Post("refresh")
     @HttpCode(HttpStatus.OK)
-    async gerarNovoAccess(
+    async renovarTokens(
         @Req() request: Request, @Res({ passthrough: true }) response: Response
     ) {
-        const refreshToken = request.cookies?.['refresh_token'];
+        const refreshToken = request.cookies?.[REFRESH_TOKEN_COOKIE];
         if (!refreshToken) throw new UnauthorizedException("Sessão Expirada. Faça Login Novamente.")
 
-        try {
-            const payload = await this.jwtService.verifyAsync<TokenPayload>(refreshToken, {
-                secret: this.config.jwtRefreshSecret
-            })
-
-            const novoPayload: TokenPayload = {
-                sub: payload.sub,
-                email: payload.email,
-                nome: payload.nome
-            }
-
-            const novoAccessToken = this.jwtService.signAsync(novoPayload, {
-                expiresIn: this.config.jwtAccessExpiresIn,
-                secret: this.config.jwtAccessSecret,
-            })
-
-            return novoAccessToken
-
-        } catch {
-            response.clearCookie("refresh_token");
-            throw new UnauthorizedException("Sessão Inválida. Faça Login Novamente.")
+        const result = await this.commandBus.execute(new RenovarTokensCommand(refreshToken))
+        if (result.isFalha) {
+            this.limparCookieRefresh(response)
+            throw result.falha
         }
+
+        const { accessToken, refreshToken: novoRefreshToken } = result.resultado
+        this.definirCookieRefresh(response, novoRefreshToken)
+
+        return { accessToken }
     }
 
     @Post("logout")
-    @HttpCode(HttpStatus.OK)
-    async logout(@Res({ passthrough: true }) response: Response) {
-        response.clearCookie('refresh_token', {
+    @HttpCode(HttpStatus.NO_CONTENT)
+    async logout(@CurrentUser() usuario: TokenPayload, @Res({ passthrough: true }) response: Response) {
+        const result = await this.commandBus.execute(new EncerrarSessaoCommand(usuario.sub, usuario.sid))
+
+        this.limparCookieRefresh(response)
+
+        if (result.isFalha) throw result.falha
+    }
+
+    @Get("sessoes")
+    async listarSessoes(@CurrentUser() usuario: TokenPayload) {
+        const result = await this.queryBus.execute(new ListarSessoesAtivasQuery(usuario.sub, usuario.sid))
+
+        if (result.isFalha) throw result.falha
+
+        return result.resultado
+    }
+
+    @Post("sessoes/encerrar-outras")
+    @HttpCode(HttpStatus.NO_CONTENT)
+    async encerrarOutrasSessoes(@CurrentUser() usuario: TokenPayload) {
+        const result = await this.commandBus.execute(new EncerrarOutrasSessoesCommand(usuario.sub, usuario.sid))
+
+        if (result.isFalha) throw result.falha
+    }
+
+    @Delete("sessoes/:sid")
+    @HttpCode(HttpStatus.NO_CONTENT)
+    async encerrarSessao(
+        @CurrentUser() usuario: TokenPayload,
+        @Param("sid") sid: string,
+        @Res({ passthrough: true }) response: Response
+    ) {
+        const result = await this.commandBus.execute(new EncerrarSessaoCommand(usuario.sub, sid))
+
+        if (result.isFalha) throw result.falha
+
+        if (sid === usuario.sid) this.limparCookieRefresh(response)
+    }
+
+    private opcoesCookieRefresh(): CookieOptions {
+        return {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
+            secure: this.config.nodeEnv === 'production',
             sameSite: 'strict',
-        });
+        }
+    }
+
+    private definirCookieRefresh(response: Response, refreshToken: string): void {
+        response.cookie(REFRESH_TOKEN_COOKIE, refreshToken, {
+            ...this.opcoesCookieRefresh(),
+            maxAge: ms(DURACAO_SESSAO),
+        })
+    }
+
+    private limparCookieRefresh(response: Response): void {
+        response.clearCookie(REFRESH_TOKEN_COOKIE, this.opcoesCookieRefresh())
     }
 }

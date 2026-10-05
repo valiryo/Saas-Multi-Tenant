@@ -1,6 +1,6 @@
 import { NAME_MIN_LENGTH } from "../constraints/constraints";
 import { ErroDeDominio } from "../errors/erro-de-dominio";
-import { FormatadorDeTexto } from "../../application";
+import { FormatadorDeTexto } from "../../helpers/formatador-de-texto";
 import { Result } from "./result";
 import { NomeDePessoaInvalidoError } from "../errors/nome-de-pessoa-invalido-error";
 

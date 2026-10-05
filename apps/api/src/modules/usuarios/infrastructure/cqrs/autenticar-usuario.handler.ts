@@ -1,5 +1,5 @@
 import { CommandHandler, ICommandHandler } from "@nestjs/cqrs";
-import { AutenticarUsuarioCasoDeUso} from "@saas/usuarios";
+import { AutenticarUsuarioCasoDeUso, AutenticarUsuarioInput } from "@saas/usuarios";
 import { AutenticarUsuarioCommand, AutenticarUsuarioCommandResult } from "./autenticar-usuario.command";
 import { Result } from "@saas/shared";
 
@@ -10,7 +10,9 @@ export class AutenticarUsuarioHandler implements ICommandHandler<AutenticarUsuar
     ){}
 
     async execute(cmd: AutenticarUsuarioCommand): Promise<Result<AutenticarUsuarioCommandResult>> {
-        const result = await this.autenticarUsuarioCasoDeUso.executar(cmd)
+        const result = await this.autenticarUsuarioCasoDeUso.executar(
+            new AutenticarUsuarioInput(cmd.email, cmd.senha, cmd.ipAddress, cmd.userAgent)
+        )
 
         if(result.isFalha) return Result.falhar(result.falha)
 

@@ -1,0 +1,1 @@
+export const DURACAO_SESSAO = '7d'

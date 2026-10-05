@@ -1,8 +1,7 @@
 import { ErroDeDominio } from "@saas/shared";
 
-export class CredenciaisInvalidasError extends Error implements ErroDeDominio {
+export class CredenciaisInvalidasError extends ErroDeDominio {
     constructor() {
         super("E-mail ou senha inválidos.");
-        this.name = "CredenciaisInvalidasError";
     }
 }

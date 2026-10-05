@@ -31,4 +31,8 @@ export class Id {
     get valor(): string {
         return this._valor;
     }
+
+    public equals(outro: Id): boolean {
+        return this._valor === outro._valor;
+    }
 }

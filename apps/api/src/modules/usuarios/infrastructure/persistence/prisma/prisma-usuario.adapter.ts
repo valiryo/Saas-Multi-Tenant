@@ -1,4 +1,4 @@
-import { Email } from "@saas/shared";
+import { Email, Id } from "@saas/shared";
 
 import { Usuario, IRepositorioUsuario } from "@saas/usuarios";
 
@@ -16,6 +16,25 @@ export class PrismaUsuarioAdapter
   constructor(
     private readonly prisma: PrismaService,
   ) {}
+
+  public async buscarPorId(
+    id: Id,
+  ): Promise<Usuario | null> {
+    const dadosPrisma =
+      await this.prisma.usuario.findUnique({
+        where: {
+          id: id.valor,
+        },
+      });
+
+    if (!dadosPrisma) {
+      return null;
+    }
+
+    return this.converterParaDominio(
+      dadosPrisma,
+    );
+  }
 
   public async buscarPorEmail(
     email: Email,
