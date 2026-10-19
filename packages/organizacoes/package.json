@@ -19,7 +19,8 @@
     "test:cov": "vitest run --coverage"
   },
   "dependencies": {
-    "@saas/shared": "workspace:^"
+    "@saas/shared": "workspace:^",
+    "@saas/usuarios": "workspace:^"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.1.8",

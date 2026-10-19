@@ -55,6 +55,27 @@ export class PrismaUsuarioAdapter
     );
   }
 
+  public async listarPorIds(
+    ids: Id[],
+  ): Promise<Usuario[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+
+    const registros =
+      await this.prisma.usuario.findMany({
+        where: {
+          id: {
+            in: ids.map((id) => id.valor),
+          },
+        },
+      });
+
+    return registros.map((registro: PrismaUsuarioSchema) =>
+      this.converterParaDominio(registro),
+    );
+  }
+
   public async salvar(
     usuario: Usuario,
   ): Promise<Usuario> {

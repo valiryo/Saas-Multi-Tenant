@@ -5,6 +5,7 @@ import {
   VinculoEmpregaticio,
   IRepositorioVinculoEmpregaticio,
   Id,
+  Result,
 } from "@saas/shared";
 
 import { PrismaService } from "src/modules/database/services/prisma.service";
@@ -117,84 +118,132 @@ export class PrismaVinculoEmpregaticioAdapter
   public async salvar(
     vinculo: VinculoEmpregaticio,
   ): Promise<VinculoEmpregaticio> {
+    const dadosPrisma =
+      await this.prisma.$transaction(
+        (transacao: Prisma.TransactionClient) =>
+          this.gravar(transacao, vinculo),
+      );
+
+    return this.converterParaDominio(dadosPrisma);
+  }
+
+  public async alterarComTravaDaOrganizacao(
+    organizacaoId: Id,
+    alterar: (vinculosAtivos: VinculoEmpregaticio[]) => Result<VinculoEmpregaticio>,
+  ): Promise<Result<VinculoEmpregaticio>> {
+    return this.prisma.$transaction(
+      async (transacao: Prisma.TransactionClient) => {
+        // Trava a linha da organização até o fim da transação: outra alteração de membros da mesma
+        // organização espera aqui, então a regra é checada sobre um estado que ninguém muda no meio.
+        // NO KEY UPDATE não bloqueia a criação de vínculos (a FK só pede KEY SHARE).
+        await transacao.$queryRaw`SELECT id FROM "Organizacao" WHERE id = ${organizacaoId.valor} FOR NO KEY UPDATE`;
+
+        const registros =
+          await transacao.vinculoEmpregaticio.findMany({
+            where: {
+              organizacaoId: organizacaoId.valor,
+              ativo: true,
+            },
+
+            orderBy: {
+              criadoEm: "asc",
+            },
+          });
+
+        const alteracao = alterar(
+          registros.map((registro: PrismaVinculoEmpregaticioSchema) =>
+            this.converterParaDominio(registro),
+          ),
+        );
+
+        if (alteracao.isFalha) {
+          return Result.falhar(alteracao.falha);
+        }
+
+        const dadosPrisma =
+          await this.gravar(transacao, alteracao.resultado);
+
+        return Result.passar(this.converterParaDominio(dadosPrisma));
+      },
+    );
+  }
+
+  // Cria ou atualiza o vínculo e registra o novo estado no histórico, dentro da transação recebida
+  private async gravar(
+    transacao: Prisma.TransactionClient,
+    vinculo: VinculoEmpregaticio,
+  ): Promise<PrismaVinculoEmpregaticioSchema> {
     const dadosPersistencia =
       PrismaVinculoEmpregaticioMapper
         .paraPersistencia(vinculo);
 
-    const dadosPrisma =
-      await this.prisma.$transaction(
-        async (transacao: Prisma.TransactionClient) => {
-          const vinculoAtual =
-            await transacao.vinculoEmpregaticio
-              .findUnique({
-                where: {
-                  id: vinculo.id.valor,
-                },
-              });
+    const vinculoAtual =
+      await transacao.vinculoEmpregaticio
+        .findUnique({
+          where: {
+            id: vinculo.id.valor,
+          },
+        });
 
-          if (!vinculoAtual) {
-            const vinculoCriado =
-              await transacao.vinculoEmpregaticio
-                .create({
-                  data: dadosPersistencia,
-                });
+    if (!vinculoAtual) {
+      const vinculoCriado =
+        await transacao.vinculoEmpregaticio
+          .create({
+            data: dadosPersistencia,
+          });
 
-            await transacao
-              .historicoVinculoEmpregaticio
-              .create({
-                data: {
-                  vinculoId: vinculoCriado.id,
-                  cargo: vinculoCriado.cargo,
-                  ativo: vinculoCriado.ativo,
-                },
-              });
+      await transacao
+        .historicoVinculoEmpregaticio
+        .create({
+          data: {
+            vinculoId: vinculoCriado.id,
+            cargo: vinculoCriado.cargo,
+            ativo: vinculoCriado.ativo,
+          },
+        });
 
-            return vinculoCriado;
-          }
+      return vinculoCriado;
+    }
 
-          const cargoFoiAlterado =
-            vinculoAtual.cargo !==
-            dadosPersistencia.cargo;
+    const cargoFoiAlterado =
+      vinculoAtual.cargo !==
+      dadosPersistencia.cargo;
 
-          const estadoFoiAlterado =
-            vinculoAtual.ativo !==
-            dadosPersistencia.ativo;
+    const estadoFoiAlterado =
+      vinculoAtual.ativo !==
+      dadosPersistencia.ativo;
 
-          const houveAlteracao =
-            cargoFoiAlterado ||
-            estadoFoiAlterado;
+    const houveAlteracao =
+      cargoFoiAlterado ||
+      estadoFoiAlterado;
 
-          if (!houveAlteracao) {
-            return vinculoAtual;
-          }
+    if (!houveAlteracao) {
+      return vinculoAtual;
+    }
 
-          const vinculoAtualizado =
-            await transacao.vinculoEmpregaticio
-              .update({
-                where: {
-                  id: vinculoAtual.id,
-                },
-                data: {
-                  cargo: dadosPersistencia.cargo,
-                  ativo: dadosPersistencia.ativo,
-                },
-              });
+    const vinculoAtualizado =
+      await transacao.vinculoEmpregaticio
+        .update({
+          where: {
+            id: vinculoAtual.id,
+          },
+          data: {
+            cargo: dadosPersistencia.cargo,
+            ativo: dadosPersistencia.ativo,
+          },
+        });
 
-          await transacao
-            .historicoVinculoEmpregaticio
-            .create({
-              data: {
-                vinculoId: vinculoAtualizado.id,
-                cargo: vinculoAtualizado.cargo,
-                ativo: vinculoAtualizado.ativo,
-              },
-            });
-
-          return vinculoAtualizado;
+    await transacao
+      .historicoVinculoEmpregaticio
+      .create({
+        data: {
+          vinculoId: vinculoAtualizado.id,
+          cargo: vinculoAtualizado.cargo,
+          ativo: vinculoAtualizado.ativo,
         },
-      );
+      });
 
-    return this.converterParaDominio(dadosPrisma);
+    return vinculoAtualizado;
   }
 
   private async listar(

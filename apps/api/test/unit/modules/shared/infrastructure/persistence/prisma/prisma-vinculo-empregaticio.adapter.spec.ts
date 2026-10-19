@@ -8,7 +8,7 @@ import {
   vi,
 } from "vitest";
 
-import { VinculoEmpregaticio, TipoCargo, Id } from "@saas/shared";
+import { VinculoEmpregaticio, TipoCargo, Id, Result, IdMalFormatadoError } from "@saas/shared";
 
 import type {
   PrismaVinculoEmpregaticioSchema,
@@ -78,9 +78,12 @@ describe("PrismaVinculoEmpregaticioRepositorio", () => {
 
   let vinculoTransacao: {
     findUnique: ReturnType<typeof vi.fn>;
+    findMany: ReturnType<typeof vi.fn>;
     create: ReturnType<typeof vi.fn>;
     update: ReturnType<typeof vi.fn>;
   };
+
+  let travaOrganizacao: ReturnType<typeof vi.fn>;
 
   let historicoTransacao: {
     create: ReturnType<typeof vi.fn>;
@@ -98,15 +101,20 @@ describe("PrismaVinculoEmpregaticioRepositorio", () => {
 
     vinculoTransacao = {
       findUnique: vi.fn(),
+      findMany: vi.fn().mockResolvedValue([]),
       create: vi.fn(),
       update: vi.fn(),
     };
+
+    travaOrganizacao = vi.fn().mockResolvedValue([]);
 
     historicoTransacao = {
       create: vi.fn(),
     };
 
     const transacao = {
+      $queryRaw: travaOrganizacao,
+
       vinculoEmpregaticio:
         vinculoTransacao,
 
@@ -518,6 +526,9 @@ describe("PrismaVinculoEmpregaticioRepositorio", () => {
             "FUNCIONARIO",
 
           ativo: true,
+
+          criadoEm:
+            vinculo.criadoEm,
         },
       });
 
@@ -900,6 +911,87 @@ describe("PrismaVinculoEmpregaticioRepositorio", () => {
       ).rejects.toThrow(
         "Falha ao registrar histórico",
       );
+    });
+  });
+
+  describe("alterarComTravaDaOrganizacao", () => {
+    const organizacaoId = Id.criar().resultado.valor;
+
+    function sqlDaTrava(): string {
+      const [partes] = travaOrganizacao.mock.calls[0] as [TemplateStringsArray];
+      return partes.join("?");
+    }
+
+    it("deve travar a organização antes de ler os vínculos ativos", async () => {
+      await repositorio.alterarComTravaDaOrganizacao(
+        Id.criar(organizacaoId).resultado,
+        () => Result.falhar(new IdMalFormatadoError("x")),
+      );
+
+      expect(sqlDaTrava()).toContain("FOR NO KEY UPDATE");
+      expect(travaOrganizacao.mock.calls[0]?.[1]).toBe(organizacaoId);
+      expect(vinculoTransacao.findMany).toHaveBeenCalledWith({
+        where: { organizacaoId, ativo: true },
+        orderBy: { criadoEm: "asc" },
+      });
+      expect(travaOrganizacao.mock.invocationCallOrder[0]!).toBeLessThan(
+        vinculoTransacao.findMany.mock.invocationCallOrder[0]!,
+      );
+    });
+
+    it("deve entregar à alteração os vínculos ativos lidos sob a trava, como entidades de domínio", async () => {
+      const registros = [
+        criarRegistroPrisma({ organizacaoId, cargo: "PROPRIETARIO" }),
+        criarRegistroPrisma({ organizacaoId }),
+      ];
+      vinculoTransacao.findMany.mockResolvedValue(registros);
+      const alterar = vi.fn((_vinculosAtivos: VinculoEmpregaticio[]) => Result.falhar(new IdMalFormatadoError("x")));
+
+      await repositorio.alterarComTravaDaOrganizacao(Id.criar(organizacaoId).resultado, alterar);
+
+      const vinculosRecebidos = alterar.mock.calls[0]![0];
+      expect(vinculosRecebidos.map((vinculo) => vinculo.id.valor)).toEqual(registros.map((registro) => registro.id));
+      expect(vinculosRecebidos[0]).toBeInstanceOf(VinculoEmpregaticio);
+      expect(vinculosRecebidos[0]?.cargo).toBe(TipoCargo.PROPRIETARIO);
+    });
+
+    it("não deve gravar nada e deve repassar a falha quando a alteração falhar", async () => {
+      const erro = new IdMalFormatadoError("x");
+
+      const resultado = await repositorio.alterarComTravaDaOrganizacao(
+        Id.criar(organizacaoId).resultado,
+        () => Result.falhar(erro),
+      );
+
+      expect(resultado.falha).toBe(erro);
+      expect(vinculoTransacao.update).not.toHaveBeenCalled();
+      expect(vinculoTransacao.create).not.toHaveBeenCalled();
+      expect(historicoTransacao.create).not.toHaveBeenCalled();
+    });
+
+    it("deve gravar o vínculo devolvido e o histórico na mesma transação da trava", async () => {
+      const registroAtual = criarRegistroPrisma({ organizacaoId, cargo: "FUNCIONARIO" });
+      vinculoTransacao.findMany.mockResolvedValue([registroAtual]);
+      vinculoTransacao.findUnique.mockResolvedValue(registroAtual);
+      vinculoTransacao.update.mockResolvedValue({ ...registroAtual, cargo: "ADMINISTRADOR" });
+
+      const resultado = await repositorio.alterarComTravaDaOrganizacao(
+        Id.criar(organizacaoId).resultado,
+        ([vinculo]) => {
+          vinculo!.alterarCargo(TipoCargo.ADMINISTRADOR);
+          return Result.passar(vinculo!);
+        },
+      );
+
+      expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+      expect(vinculoTransacao.update).toHaveBeenCalledWith({
+        where: { id: registroAtual.id },
+        data: { cargo: "ADMINISTRADOR", ativo: true },
+      });
+      expect(historicoTransacao.create).toHaveBeenCalledWith({
+        data: { vinculoId: registroAtual.id, cargo: "ADMINISTRADOR", ativo: true },
+      });
+      expect(resultado.resultado.cargo).toBe(TipoCargo.ADMINISTRADOR);
     });
   });
 });

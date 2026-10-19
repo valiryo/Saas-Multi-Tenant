@@ -21,6 +21,7 @@ export class PrismaVinculoEmpregaticioMapper {
         dadosPrisma.cargo,
       ),
       ativo: dadosPrisma.ativo,
+      criadoEm: dadosPrisma.criadoEm,
     });
   }
 
@@ -42,6 +43,8 @@ export class PrismaVinculoEmpregaticioMapper {
       ),
 
       ativo: vinculo.estaAtivo,
+
+      criadoEm: vinculo.criadoEm,
     };
   }
 

@@ -12,6 +12,7 @@ export * from "./errors/sessao-expiracao-invalida.error";
 export * from "./errors/sessao-invalida.error";
 export * from "./errors/sessao-nao-encontrada.error";
 export * from "./errors/usuario-ja-existente.error";
+export * from "./errors/usuario-nao-encontrado.error";
 export * from "./repositories/sessao.repositorio";
 export * from "./repositories/usuario.repositorio";
 export * from "./services/servico-criptografia";

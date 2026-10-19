@@ -53,7 +53,8 @@ export class FormatadorDeTexto {
       .replace(/[^a-z0-9\s-]/g, '') // Remove o que não for alfanumérico, espaço ou hífen
       .trim()
       .replace(/\s+/g, '-')         // Substitui espaços por hífen
-      .replace(/-+/g, '-');          // Remove hífens duplicados
+      .replace(/-+/g, '-')          // Remove hífens duplicados
+      .replace(/^-|-$/g, '');       // Remove hífens das pontas
   }
 
   /**

@@ -7,6 +7,7 @@ import { envValidationSchema } from './config/env.validation';
 
 import { AuthModule } from './modules/auth/auth.module';
 import { UsuariosModule } from '@users/usuarios.module';
+import { OrganizacoesModule } from '@organizacoes/organizacoes.module';
 import { APP_FILTER } from '@nestjs/core';
 import { DomainExceptionFilter } from '@shared/infrastructure/filters/domain-exception.filter';
 
@@ -24,6 +25,7 @@ import { DomainExceptionFilter } from '@shared/infrastructure/filters/domain-exc
 
     AuthModule,
     UsuariosModule,
+    OrganizacoesModule,
   ],
   providers: [
     {provide: APP_FILTER, useClass: DomainExceptionFilter}

@@ -41,6 +41,9 @@ importers:
       '@prisma/adapter-pg':
         specifier: ^7.9.1
         version: 7.9.1
+      '@saas/organizacoes':
+        specifier: workspace:^
+        version: link:../../packages/organizacoes
       '@saas/shared':
         specifier: workspace:^
         version: link:../../packages/shared
@@ -236,6 +239,9 @@ importers:
       '@saas/shared':
         specifier: workspace:^
         version: link:../shared
+      '@saas/usuarios':
+        specifier: workspace:^
+        version: link:../usuarios
     devDependencies:
       '@vitest/coverage-v8':
         specifier: ^4.1.8

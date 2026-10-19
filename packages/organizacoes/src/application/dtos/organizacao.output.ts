@@ -1,5 +1,6 @@
 export interface OrganizacaoOutput {
-    id: string;
-    nome: string;
-    slug: string;
+    readonly id: string;
+    readonly nome: string;
+    readonly slug: string;
+    readonly criadoEm: Date;
 }

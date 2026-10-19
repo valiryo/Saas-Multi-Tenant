@@ -2,7 +2,6 @@ import { Global, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 
-import { PrismaModule } from '@shared/infrastructure/persistence/prisma/prisma.module';
 import { PrismaVinculoEmpregaticioAdapter } from '@shared/infrastructure/persistence/prisma/prisma-vinculo-empregaticio.adapter';
 import { REPOSITORIO_VINCULO_EMPREGATICIO_TOKEN } from '@shared/shared.token';
 
@@ -18,6 +17,9 @@ import {
   SERVICO_AUTENTICACAO_TOKEN,
 } from '@users/usuario.tokens';
 
+import { PrismaOrganizacaoAdapter } from '@organizacoes/infrastructure/persistence/prisma/prisma-organizacao.adapter';
+import { REPOSITORIO_ORGANIZACAO_TOKEN } from '@organizacoes/organizacao.tokens';
+
 import { apiConfig } from 'src/config/api.config';
 
 import { DatabaseModule } from '../database/database.module';
@@ -25,8 +27,6 @@ import { DatabaseModule } from '../database/database.module';
 @Global()
 @Module({
   imports: [
-    PrismaModule,
-
     ConfigModule.forFeature(apiConfig),
 
     JwtModule.register({}),
@@ -51,6 +51,11 @@ import { DatabaseModule } from '../database/database.module';
     },
 
     {
+      provide: REPOSITORIO_ORGANIZACAO_TOKEN,
+      useClass: PrismaOrganizacaoAdapter,
+    },
+
+    {
       provide: SERVICO_CRIPTOGRAFIA_TOKEN,
       useClass: BcryptServicoCriptografia,
     },
@@ -65,6 +70,7 @@ import { DatabaseModule } from '../database/database.module';
     REPOSITORIO_USUARIO_TOKEN,
     REPOSITORIO_SESSAO_TOKEN,
     REPOSITORIO_VINCULO_EMPREGATICIO_TOKEN,
+    REPOSITORIO_ORGANIZACAO_TOKEN,
     SERVICO_CRIPTOGRAFIA_TOKEN,
     SERVICO_AUTENTICACAO_TOKEN,
     JwtModule,

@@ -1,9 +1,7 @@
-import { Organizacao } from "../../domain";
+import { Result, TipoCargo, VinculoEmpregaticio } from "@saas/shared";
+import { IRepositorioOrganizacao, Organizacao, OrganizacaoJaExistenteError } from "../../domain";
 import { CriarOrganizacaoInput } from "../dtos/criar-organizacao.input";
 import { OrganizacaoOutput } from "../dtos/organizacao.output";
-import { Result } from "@saas/shared";
-import { IRepositorioOrganizacao } from "../../domain";
-import { OrganizacaoJaExistenteError } from "../../domain";
 
 export class CriarOrganizacaoCasoDeUso {
     constructor(
@@ -23,20 +21,33 @@ export class CriarOrganizacaoCasoDeUso {
 
         const novaOrganizacao = organizacaoResult.resultado;
 
-        // 2. Regra de Negócio: Slug Único
+        // 2. Regra de Negócio: quem cria a organização se torna o seu PROPRIETARIO
+        const vinculoResult = VinculoEmpregaticio.criar({
+            usuarioId: input.criadorId,
+            organizacaoId: novaOrganizacao.id.valor,
+            cargo: TipoCargo.PROPRIETARIO,
+            ativo: true,
+        });
+
+        if (vinculoResult.isFalha) {
+            return Result.falhar(vinculoResult.falha);
+        }
+
+        // 3. Regra de Negócio: Slug Único
         const organizacaoJaExistente = await this.organizacaoRepo.buscarPorSlug(novaOrganizacao.slug);
         if (organizacaoJaExistente) {
             return Result.falhar(new OrganizacaoJaExistenteError(novaOrganizacao.slug.valor));
         }
 
-        // 3. Persistência
-        await this.organizacaoRepo.salvar(novaOrganizacao);
+        // 4. Persistência atômica da organização e do vínculo do proprietário
+        await this.organizacaoRepo.salvarComVinculo(novaOrganizacao, vinculoResult.resultado);
 
-        // 4. Mapeamento para o DTO de saída
+        // 5. Mapeamento para o DTO de saída
         const output: OrganizacaoOutput = {
             id: novaOrganizacao.id.valor,
             nome: novaOrganizacao.nome.valor,
             slug: novaOrganizacao.slug.valor,
+            criadoEm: novaOrganizacao.criadoEm,
         };
 
         return Result.passar(output);

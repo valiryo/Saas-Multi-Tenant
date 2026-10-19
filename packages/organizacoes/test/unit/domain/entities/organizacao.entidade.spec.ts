@@ -68,6 +68,23 @@ describe("Organizacao", () => {
             expect(organizacao.id.valor).toBe(id);
         });
 
+        it("deve definir a data de criação como agora quando ela não for informada", () => {
+            const antes = new Date();
+
+            const organizacao = criarOrganizacao();
+
+            expect(organizacao.criadoEm.getTime()).toBeGreaterThanOrEqual(antes.getTime());
+            expect(organizacao.criadoEm.getTime()).toBeLessThanOrEqual(Date.now());
+        });
+
+        it("deve utilizar a data de criação informada", () => {
+            const criadoEm = new Date("2026-01-15T10:00:00.000Z");
+
+            const organizacao = criarOrganizacao({ criadoEm });
+
+            expect(organizacao.criadoEm).toEqual(criadoEm);
+        });
+
         it("deve retornar falha quando o nome for inválido", () => {
             const resultado = Organizacao.criar({
                 ...criarPropsValidas(),

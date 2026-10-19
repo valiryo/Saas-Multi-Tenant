@@ -3,9 +3,17 @@
  */
 
 export * from "./entities/organizacao.entidade";
+export * from "./errors/cargo-nao-permitido.error";
+export * from "./errors/membro-nao-encontrado.error";
 export * from "./errors/nome-da-organizacao-invalido.error";
 export * from "./errors/organizacao-ja-existente.error";
+export * from "./errors/organizacao-nao-encontrada.error";
+export * from "./errors/permissao-insuficiente.error";
 export * from "./errors/slug-invalido.error";
+export * from "./errors/ultimo-proprietario.error";
+export * from "./errors/vinculo-ja-existente.error";
 export * from "./repositories/organizacao.repositorio";
+export * from "./services/politica-de-cargos";
+export * from "./services/politica-de-proprietarios";
 export * from "./value-objects/nome-da-organizacao";
 export * from "./value-objects/slug";

@@ -8,7 +8,8 @@
     "baseUrl": ".", 
     "paths": { //aliases do typescript. não traduz automaticamente os alias em caminhos nos códigos javascript compilados, mas o tsconfig-paths faz isso.
       "@shared/*": ["src/modules/shared/*"], 
-      "@users/*": ["src/modules/usuarios/*"] 
+      "@users/*": ["src/modules/usuarios/*"],
+      "@organizacoes/*": ["src/modules/organizacoes/*"]
     }
   },
   "include": ["src/**/*.ts"],  //escolhe quais arquivos dentr do rootDir serão compilados

@@ -3,6 +3,7 @@ import { Id } from "../../../../src/domain/value-objects/id";
 
 import { VinculoEmpregaticio } from "../../../../src/domain/entities/vinculo-empregaticio.entidade";
 import { TipoCargo } from "../../../../src/domain/enums/tipo-cargo.enum";
+import { IdMalFormatadoError } from "../../../../src/domain/errors/id-mal-formatado-error";
 
 describe("VinculoEmpregaticio", () => {
     function criarPropsValidas() {
@@ -20,6 +21,7 @@ describe("VinculoEmpregaticio", () => {
             organizacaoId: string;
             cargo: TipoCargo;
             ativo: boolean;
+            criadoEm: Date;
         }> = {},
     ): VinculoEmpregaticio {
         const resultado = VinculoEmpregaticio.criar({
@@ -97,6 +99,19 @@ describe("VinculoEmpregaticio", () => {
             expect(resultado.isFalha).toBe(true);
         });
 
+        it.each(["usuarioId", "organizacaoId"] as const)(
+            "deve retornar falha quando %s for vazio, em vez de gerar um ID novo",
+            (campo) => {
+                const resultado = VinculoEmpregaticio.criar({
+                    ...criarPropsValidas(),
+                    [campo]: "",
+                });
+
+                expect(resultado.isFalha).toBe(true);
+                expect(resultado.falha).toBeInstanceOf(IdMalFormatadoError);
+            },
+        );
+
         it("deve criar o vínculo ativo por padrão", () => {
             const vinculo = criarVinculo();
 
@@ -109,6 +124,23 @@ describe("VinculoEmpregaticio", () => {
             });
 
             expect(vinculo.estaAtivo).toBe(false);
+        });
+
+        it("deve definir a data de criação como agora quando ela não for informada", () => {
+            const antes = new Date();
+
+            const vinculo = criarVinculo();
+
+            expect(vinculo.criadoEm.getTime()).toBeGreaterThanOrEqual(antes.getTime());
+            expect(vinculo.criadoEm.getTime()).toBeLessThanOrEqual(Date.now());
+        });
+
+        it("deve utilizar a data de criação informada", () => {
+            const criadoEm = new Date("2026-01-15T10:00:00.000Z");
+
+            const vinculo = criarVinculo({ criadoEm });
+
+            expect(vinculo.criadoEm).toEqual(criadoEm);
         });
     });
 
@@ -242,6 +274,51 @@ describe("VinculoEmpregaticio", () => {
             expect(vinculo.cargo).toBe(
                 TipoCargo.ADMINISTRADOR,
             );
+        });
+    });
+
+    describe("ehProprietarioAtivo", () => {
+        it("deve ser verdadeiro para um PROPRIETARIO ativo", () => {
+            const vinculo = criarVinculo({ cargo: TipoCargo.PROPRIETARIO });
+
+            expect(vinculo.ehProprietarioAtivo()).toBe(true);
+        });
+
+        it("deve ser falso para um PROPRIETARIO desativado", () => {
+            const vinculo = criarVinculo({ cargo: TipoCargo.PROPRIETARIO, ativo: false });
+
+            expect(vinculo.ehProprietarioAtivo()).toBe(false);
+        });
+
+        it.each([TipoCargo.ADMINISTRADOR, TipoCargo.FUNCIONARIO])(
+            "deve ser falso para o cargo %s",
+            (cargo) => {
+                expect(criarVinculo({ cargo }).ehProprietarioAtivo()).toBe(false);
+            },
+        );
+    });
+
+    describe("possuiAlgumCargo", () => {
+        it("deve ser verdadeiro quando o cargo do vínculo estiver na lista", () => {
+            const vinculo = criarVinculo({ cargo: TipoCargo.ADMINISTRADOR });
+
+            expect(vinculo.possuiAlgumCargo([TipoCargo.PROPRIETARIO, TipoCargo.ADMINISTRADOR])).toBe(true);
+        });
+
+        it("deve ser falso quando o cargo do vínculo não estiver na lista", () => {
+            const vinculo = criarVinculo({ cargo: TipoCargo.FUNCIONARIO });
+
+            expect(vinculo.possuiAlgumCargo([TipoCargo.PROPRIETARIO, TipoCargo.ADMINISTRADOR])).toBe(false);
+        });
+
+        it("deve ser falso para um vínculo desativado, mesmo com o cargo na lista", () => {
+            const vinculo = criarVinculo({ cargo: TipoCargo.PROPRIETARIO, ativo: false });
+
+            expect(vinculo.possuiAlgumCargo([TipoCargo.PROPRIETARIO])).toBe(false);
+        });
+
+        it("deve ser falso para uma lista vazia", () => {
+            expect(criarVinculo({ cargo: TipoCargo.PROPRIETARIO }).possuiAlgumCargo([])).toBe(false);
         });
     });
 });

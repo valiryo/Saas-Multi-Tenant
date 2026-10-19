@@ -1,7 +1,7 @@
 import { Result } from "@saas/shared";
 import { NomeDaOrganizacaoInvalidoError } from "../errors/nome-da-organizacao-invalido.error";
 
-const NOME_ORGANIZACAO_MIN_LENGTH = 2;
+const NOME_ORGANIZACAO_MIN_LENGTH = 3;
 const NOME_ORGANIZACAO_MAX_LENGTH = 100;
 
 export class NomeDaOrganizacao {

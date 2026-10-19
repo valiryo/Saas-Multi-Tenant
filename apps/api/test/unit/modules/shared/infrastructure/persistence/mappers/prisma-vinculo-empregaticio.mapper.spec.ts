@@ -104,6 +104,16 @@ describe("PrismaVinculoEmpregaticioMapper", () => {
       expect(vinculo.estaAtivo).toBe(true);
     });
 
+    it("deve preservar a data de criação do registro", () => {
+      const criadoEm = new Date("2026-01-15T10:00:00.000Z");
+
+      const resultado =
+        PrismaVinculoEmpregaticioMapper
+          .paraDominio(criarRegistroPrisma({ criadoEm }));
+
+      expect(resultado.resultado.criadoEm).toEqual(criadoEm);
+    });
+
     it("deve converter o cargo administrador", () => {
       const dadosPrisma =
         criarRegistroPrisma({
@@ -243,6 +253,8 @@ describe("PrismaVinculoEmpregaticioMapper", () => {
           cargo: cargoPrisma,
 
           ativo: true,
+
+          criadoEm: vinculo.criadoEm,
         });
       },
     );

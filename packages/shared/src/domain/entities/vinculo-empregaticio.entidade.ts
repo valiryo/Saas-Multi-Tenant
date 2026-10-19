@@ -1,5 +1,6 @@
 import { Id } from "../value-objects/id";
 import { Result } from "../value-objects/result";
+import { IdMalFormatadoError } from "../errors/id-mal-formatado-error";
 
 import { TipoCargo } from "../enums/tipo-cargo.enum";
 
@@ -9,6 +10,7 @@ export interface CriarVinculoEmpregaticioProps {
     organizacaoId: string;
     cargo: TipoCargo;
     ativo?: boolean;
+    criadoEm?: Date;
 }
 
 export class VinculoEmpregaticio {
@@ -18,6 +20,7 @@ export class VinculoEmpregaticio {
         private readonly _organizacaoId: Id,
         private _cargo: TipoCargo,
         private _ativo: boolean,
+        private readonly _criadoEm: Date,
     ) {}
 
     public static criar(
@@ -28,12 +31,12 @@ export class VinculoEmpregaticio {
             return Result.falhar(idResult.falha);
         }
 
-        const usuarioIdResult = Id.criar(props.usuarioId);
+        const usuarioIdResult = VinculoEmpregaticio.criarReferencia(props.usuarioId);
         if (usuarioIdResult.isFalha) {
             return Result.falhar(usuarioIdResult.falha);
         }
 
-        const organizacaoIdResult = Id.criar(props.organizacaoId);
+        const organizacaoIdResult = VinculoEmpregaticio.criarReferencia(props.organizacaoId);
         if (organizacaoIdResult.isFalha) {
             return Result.falhar(organizacaoIdResult.falha);
         }
@@ -45,8 +48,20 @@ export class VinculoEmpregaticio {
                 organizacaoIdResult.resultado,
                 props.cargo,
                 props.ativo ?? true,
+                props.criadoEm ?? new Date(),
             ),
         );
+    }
+
+    // Usuário e organização são referências a registros existentes: sem valor, Id.criar geraria um id novo
+    private static criarReferencia(
+        valor: string,
+    ): Result<Id> {
+        if (!valor) {
+            return Result.falhar(new IdMalFormatadoError(valor ?? ""));
+        }
+
+        return Id.criar(valor);
     }
 
     public alterarCargo(
@@ -61,6 +76,17 @@ export class VinculoEmpregaticio {
 
     public desativar(): void {
         this._ativo = false;
+    }
+
+    public ehProprietarioAtivo(): boolean {
+        return this._ativo && this._cargo === TipoCargo.PROPRIETARIO;
+    }
+
+    // Um vínculo desativado não tem cargo algum, qualquer que seja o cargo registrado
+    public possuiAlgumCargo(
+        cargos: readonly TipoCargo[],
+    ): boolean {
+        return this._ativo && cargos.includes(this._cargo);
     }
 
     public get id(): Id {
@@ -81,5 +107,9 @@ export class VinculoEmpregaticio {
 
     public get estaAtivo(): boolean {
         return this._ativo;
+    }
+
+    public get criadoEm(): Date {
+        return this._criadoEm;
     }
 }
