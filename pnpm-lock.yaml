@@ -197,6 +197,10 @@ importers:
       '@prisma/client':
         specifier: 7.9.1
         version: 7.9.1(prisma@7.9.1(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(magicast@0.5.3)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(typescript@5.9.2))(typescript@5.9.2)
+    devDependencies:
+      prisma:
+        specifier: 7.9.1
+        version: 7.9.1(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(magicast@0.5.3)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(typescript@5.9.2)
 
   packages/eslint-config:
     devDependencies:
@@ -4892,7 +4896,6 @@ snapshots:
       zeptomatch: 2.1.0
     transitivePeerDependencies:
       - typescript
-    optional: true
 
   '@prisma/dev@0.24.17(typescript@5.9.3)':
     dependencies:
@@ -7469,7 +7472,6 @@ snapshots:
       - magicast
       - react
       - react-dom
-    optional: true
 
   prisma@7.9.1(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(magicast@0.5.3)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(typescript@5.9.3):
     dependencies:
@@ -8199,7 +8201,6 @@ snapshots:
   valibot@1.4.2(typescript@5.9.2):
     optionalDependencies:
       typescript: 5.9.2
-    optional: true
 
   valibot@1.4.2(typescript@5.9.3):
     optionalDependencies:

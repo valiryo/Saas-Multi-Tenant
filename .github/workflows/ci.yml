@@ -1,0 +1,35 @@
+
+name: CI (Integração Contínua)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Validar Build e Testes
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 1. Checkout do código
+        uses: actions/checkout@v4
+
+      - name: 2. Instalar pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: 3. Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: 4. Instalar dependências
+        run: pnpm install --frozen-lockfile
+
+      - name: 5. Compilar projetos
+        run: pnpm build
+
+      - name: 6. Executar testes unitários
+        run: pnpm test
